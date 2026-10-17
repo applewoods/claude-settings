@@ -25,6 +25,7 @@ cd ~/claude-settings
 | Claude Code (CLI 또는 데스크톱 앱) | 설정을 읽는 주체 | 필수 |
 | Node.js 22 이상 | `design-taste-frontend`의 검사 스크립트 | 그 스크립트만 실행 안 됨 |
 | Chrome / Edge / Chromium | 같은 스크립트의 화면 검사 | 위와 같음 |
+| Codex CLI (`npm i -g @openai/codex`) + `codex login` | verifier의 독립 검증 | 검증 단계가 멈추고 사용자에게 알림 |
 
 ---
 
@@ -40,7 +41,7 @@ cd ~/claude-settings
    - `ls -l ~/.claude/agents/`로 서브 에이전트 4개(`scout`, `builder`, `expert`, `verifier`)가 링크됐는지 확인한다.
    - 스킬 폴더마다 `SKILL.md`가 있고, 첫 부분에 `name:`과 `description:`이 있는지 확인한다.
    - 새 세션에서 사용 가능한 스킬 목록에 아래 "구성" 표의 스킬들이 보이는지 확인한다.
-5. **선택 확인**: `node -v`가 22 이상인지, Chrome 계열 브라우저가 있는지 확인하고, 없으면 사용자에게 알린다(설치는 사용자 동의 후).
+5. **선택 확인**: `node -v`가 22 이상인지, Chrome 계열 브라우저가 있는지, `codex --version`과 `codex login status`가 되는지 확인하고, 없으면 사용자에게 알린다(설치는 사용자 동의 후, 로그인은 사용자가 직접).
 6. **hook 확인**: `~/.claude/settings.json`의 `hooks.SessionStart`와 `hooks.Stop`에 `scripts/sync.sh`가 등록됐는지 확인한다. `install.sh`가 기존 설정을 유지한 채 추가한다.
 7. **하지 말 것**: `~/.claude/settings.json`의 다른 항목, 인증 정보, `~/.claude/skills/synced/`(앱이 관리하는 폴더)는 건드리지 않는다. 사용자 확인 없이 기존 파일을 지우지 않는다.
 
@@ -63,6 +64,7 @@ claude-settings/
 ├── CLAUDE.md          # 전역 지침 → ~/.claude/CLAUDE.md (모든 세션에서 항상 읽힘)
 ├── install.sh         # ~/.claude 에 심볼릭 링크 연결 + 자동 동기화 hook 등록
 ├── scripts/sync.sh    # 자동 동기화(pull / push), hook이 호출
+├── scripts/codex-verify.sh  # Codex CLI로 읽기 전용 독립 검증 (verifier가 호출)
 ├── skills/            # 업무별 매뉴얼 → ~/.claude/skills/<이름>/ (관련 작업일 때만 읽힘)
 └── agents/            # 서브 에이전트 정의 → ~/.claude/agents/<이름>.md
 ```
@@ -78,9 +80,9 @@ claude-settings/
 | `scout` | haiku | 찾기·읽기·요약, 자료 조사 | 읽기 전용 |
 | `builder` | sonnet | 보통 난이도 구현·분석·초안 | 전체 |
 | `expert` | opus | 설계 결정, 연구 설계, 논문 핵심, 복잡한 디버깅 | 전체 |
-| `verifier` | sonnet | 완료 기준으로 독립 검증 (고치지 않음) | 읽기 + 실행 |
+| `verifier` | **Codex CLI** (haiku가 실행만 담당) | 완료 기준으로 독립 검증. Claude와 다른 모델이 판정 | Codex 읽기 전용 샌드박스 |
 
-틀리면 비용이 큰 일은 모델을 한 단계 올리고(예: 제출 전 검증은 verifier를 opus로), 판단이 거의 없는 대량 작업은 내립니다. 삭제·설치·커밋·푸시는 팀원에게 맡기지 않고 오케스트레이터가 사용자 확인 후 직접 합니다.
+틀리면 비용이 큰 일은 모델을 한 단계 올리고, 판단이 거의 없는 대량 작업은 내립니다. 삭제·설치·커밋·푸시는 팀원에게 맡기지 않고 오케스트레이터가 사용자 확인 후 직접 합니다.
 
 ### 스킬
 | 스킬 | 언제 쓰이나 | 출처 |
