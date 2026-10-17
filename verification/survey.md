@@ -1,0 +1,11 @@
+# Domain questions — survey / interview design (check BEFORE fielding)
+- Leading questions: does any question suggest the desired answer, praise the product, or assume a problem exists?
+- Positivity bias: are there "would you use / do you like / how much would you pay" questions? These overstate demand. Are there questions about reasons NOT to use, frustrations, and current behaviour?
+- Double-barrelled questions: does any question ask two things at once?
+- Hypothetical vs. past behaviour: are most questions about what people actually did, not what they would do?
+- Choice and scale questions: are options mutually exclusive and exhaustive (incl. "none / other / don't use")? Are scale anchors balanced?
+- Forced trade-offs: is there at least one question that forces prioritisation (e.g. keep only 2 of N)?
+- Coverage of people: does the persona spec include non-users, potential users who do not feel the need, and users satisfied with a competitor? Are behavioural variables included, not only demographics?
+- Distributions: does each distribution have a source or a clear [가정] mark? Are joint distributions used where variables are clearly dependent (e.g. role × age)? Any implausible combinations possible?
+- Service description shown to personas: does it contain internal goals, expected numbers, or persuasive language that would bias answers?
+- Length: 8–12 questions; anything redundant?

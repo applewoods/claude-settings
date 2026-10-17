@@ -15,7 +15,7 @@ model: haiku
 1. 오케스트레이터가 준 검증 대상·완료 기준·참고 파일을 그대로 브리핑 파일로 만든다(`mktemp`로 만든 임시 파일). 내용을 줄이거나 바꾸지 않는다.
 2. 실행한다(검사할 폴더는 결과물이 있는 프로젝트 폴더):
    ```bash
-   ~/claude-settings/scripts/codex-verify.sh "<검사할 폴더>" "<브리핑 파일>"
+   "$CLAUDE_SETTINGS_DIR"/scripts/codex-verify.sh "<검사할 폴더>" "<브리핑 파일>"
    ```
    - 오케스트레이터가 준 옵션(`-t 유형`, `--run`, `--web`, `-e 강도`, `--label`, `-m 모델`)을 그대로 붙인다.
    - 오래 걸릴 수 있으니 Bash timeout을 600000(10분)으로 준다.

@@ -6,7 +6,7 @@
 #   codex-verify.sh <검사할 폴더> <브리핑 파일 | -> [옵션]
 #
 # 옵션:
-#   -t 유형     업무 유형별 비판 질문 추가. paper | data | dev | design | plan (쉼표로 여러 개)
+#   -t 유형     업무 유형별 비판 질문 추가. paper | data | dev | design | plan | survey (쉼표로 여러 개)
 #   --run       원본을 건드리지 않는 임시 복사본에서 실행 권한을 주고 검증 (테스트·분석 재실행용)
 #   --web       웹 검색 허용 (인용 실존·출처 확인용)
 #   -e 강도     Codex 추론 강도: low | medium | high | xhigh (기본 high)
@@ -119,7 +119,8 @@ echo
 
 # 검증 기록 저장
 if [ "$SAVE" = 1 ]; then
-  OUTDIR="$DIR/docs/verification"
+  # docs/ 아래 폴더를 검사한 경우 프로젝트 루트의 docs/verification에 모은다
+  case "$DIR" in */docs/*) OUTDIR="${DIR%%/docs/*}/docs/verification" ;; *) OUTDIR="$DIR/docs/verification" ;; esac
   if ! mkdir -p "$OUTDIR" 2>/dev/null; then
     echo "[검증 기록 저장 실패] 폴더를 만들 수 없습니다: $OUTDIR" >&2
   else

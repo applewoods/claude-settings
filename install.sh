@@ -42,14 +42,17 @@ for file in "$REPO"/agents/*.md; do
   link "$file" "$CLAUDE_DIR/agents/$(basename "$file")"
 done
 
-echo "auto-sync hooks"
+echo "settings.json (env, auto-sync hooks)"
 # ~/.claude/settings.json 에 자동 동기화 hook을 추가한다(기존 설정은 유지, 중복 추가 안 함).
 #   SessionStart → sync.sh pull : 세션 시작 시 다른 컴퓨터의 변경 받기
 #   Stop         → sync.sh push : 턴이 끝날 때 바뀐 설정 커밋·푸시
-SETTINGS="$CLAUDE_DIR/settings.json" SYNC="$REPO/scripts/sync.sh" python3 - <<'PY'
+SETTINGS="$CLAUDE_DIR/settings.json" SYNC="$REPO/scripts/sync.sh" REPO="$REPO" python3 - <<'PY'
 import json, os
 path, sync = os.environ["SETTINGS"], os.environ["SYNC"]
 data = json.load(open(path)) if os.path.exists(path) and os.path.getsize(path) else {}
+# 스킬·문서가 저장소 위치를 찾을 수 있게 환경 변수로 등록
+data.setdefault("env", {})["CLAUDE_SETTINGS_DIR"] = os.environ["REPO"]
+print(f"  env CLAUDE_SETTINGS_DIR={os.environ['REPO']}")
 hooks = data.setdefault("hooks", {})
 wanted = {
     "SessionStart": {"type": "command", "command": f'"{sync}" pull', "timeout": 30},

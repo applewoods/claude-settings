@@ -16,7 +16,7 @@ cd ~/claude-settings
 ./install.sh
 ```
 
-설치가 끝나면 **새로 시작하는 Claude Code 세션부터** 적용됩니다.
+설치가 끝나면 **새로 시작하는 Claude Code 세션부터** 적용됩니다. `install.sh`는 저장소 위치를 `CLAUDE_SETTINGS_DIR` 환경 변수로 `~/.claude/settings.json`에 등록하므로, 다른 폴더에 받아도 스킬의 경로가 맞게 동작합니다.
 
 ### 필요한 것
 | 항목 | 용도 | 없으면 |
@@ -25,7 +25,8 @@ cd ~/claude-settings
 | Claude Code (CLI 또는 데스크톱 앱) | 설정을 읽는 주체 | 필수 |
 | Node.js 22 이상 | `design-taste-frontend`의 검사 스크립트 | 그 스크립트만 실행 안 됨 |
 | Chrome / Edge / Chromium | 같은 스크립트의 화면 검사 | 위와 같음 |
-| Codex CLI (`npm i -g @openai/codex`) + `codex login` | verifier의 독립 검증 | 검증 단계가 멈추고 사용자에게 알림 |
+| Codex CLI (`npm i -g @openai/codex`) + `codex login` | 독립 검증, 가상 사용자 인터뷰 | 검증 단계가 멈추고 사용자에게 알림 |
+| Python 3 (표준 라이브러리만) | 가상 사용자 조사 스크립트 | 해당 스킬만 동작 안 함 |
 
 ---
 
@@ -65,7 +66,7 @@ claude-settings/
 ├── install.sh         # ~/.claude 에 심볼릭 링크 연결 + 자동 동기화 hook 등록
 ├── scripts/sync.sh    # 자동 동기화(pull / push), hook이 호출
 ├── scripts/codex-verify.sh  # Codex CLI 독립 검증 (읽기 전용 / 격리 복사본 실행 / 웹 검색)
-├── verification/      # 검증 원칙(principles.md)과 업무별 비판 질문(paper·data·dev·design·plan)
+├── verification/      # 검증 원칙(principles.md)과 업무별 비판 질문(paper·data·dev·design·plan·survey)
 ├── skills/            # 업무별 매뉴얼 → ~/.claude/skills/<이름>/ (관련 작업일 때만 읽힘)
 └── agents/            # 서브 에이전트 정의 → ~/.claude/agents/<이름>.md
 ```
@@ -91,7 +92,7 @@ Claude가 만든 결과를 **다른 회사의 다른 모델(Codex)**이 근거 �
 - **원칙** (`verification/principles.md`): "틀렸다"는 가정에서 반증 시도 · 모든 판정에 근거 유형([직접 확인]/[간접 추론]/[확인 불가]) · 완료 기준 밖의 문제도 심각도(치명/중요/사소)와 함께 보고 · 확신도와 "판정을 뒤집을 수 있는 것" 명시
 - **업무별 비판 질문**: 논문(과장, 인용이 문장을 실제로 뒷받침하는지), 데이터(누수, 재현, 통계 가정), 개발(경계값, 권한, 테스트가 실제로 검사하는지), 디자인(사용 흐름, 접근성), 기획(누락 시나리오, 근거)
 - **강도**: 기본(작은 일, Claude 자체 확인) → 독립(팀 작업, Codex `-e high`) → 강화(제출·운영 배포, Codex `-e xhigh` + 사용자 최종 판단)
-- **옵션**: `-t` 유형(paper·data·dev·design·plan) · `--run` 원본의 임시 복사본에서 테스트·분석 실제 실행 · `--web` 인용·출처 웹 확인(없으면 웹 검색 꺼짐) · `-e` 추론 강도(low·medium·high·xhigh, 기본 high) · `-m` Codex 모델 · `--label` 기록 이름 · `--no-save` 기록 저장 안 함
+- **옵션**: `-t` 유형(paper·data·dev·design·plan·survey) · `--run` 원본의 임시 복사본에서 테스트·분석 실제 실행 · `--web` 인용·출처 웹 확인(없으면 웹 검색 꺼짐) · `-e` 추론 강도(low·medium·high·xhigh, 기본 high) · `-m` Codex 모델 · `--label` 기록 이름 · `--no-save` 기록 저장 안 함
 - **기록**: `<프로젝트>/docs/verification/날짜_이름.md`에 브리핑·Codex 보고·수용/기각 처리를 남김
 - **의견 충돌**: Codex 지적은 수용 또는 근거 있는 기각으로만 처리. 근거가 맞서면 expert(opus) 세 번째 의견 또는 사용자 결정
 - **데이터 반출**: 검사 파일 내용이 OpenAI로 전송됨. 프로젝트 `CLAUDE.md`의 "Codex 검증: 허용/금지/매번 확인"을 따름
@@ -108,7 +109,7 @@ Claude가 만든 결과를 **다른 회사의 다른 모델(Codex)**이 근거 �
 | `paper-writing` | 논문 작성·교정·인용 (인용 확인, 원문→수정안 형식) | 직접 작성 |
 | `data-analysis` | 데이터 분석·ML/DL 실험 (누수 방지, 재현성, 실행한 결과만 보고) | 직접 작성 |
 | `service-planning` | 웹·앱 서비스 기획 (PRD, 유저 스토리, 화면 흐름, HTML 목업, MVP) | 직접 작성 |
-| `synthetic-user-research` | 기획 사전 조사: 분포에서 뽑은 페르소나 30~50명 인터뷰를 Claude·Codex로 각각 실행 → 공통 패턴만 `[가설]`로 채택 → 실제 인터뷰 질문지 (근거: Random Silicon Sampling, arXiv:2402.18144) | 직접 작성 |
+| `synthetic-user-research` | 기획 사전 조사: 아이디어만 주면 Claude가 페르소나 분포·질문지 초안 → Codex 사전 검사 → 사용자 검토 1회 → 페르소나 40명을 Claude·Codex가 1명씩 따로 인터뷰 → 고르기·척도 자동 집계(χ²·KL) → 공통 패턴만 `[가설]` → 실제 인터뷰 질문지 (근거: Random Silicon Sampling, arXiv:2402.18144) | 직접 작성 |
 | `ux-ui-design` | 디자인 기준(`docs/DESIGN.md`)과 어떤 디자인 스킬을 언제 쓸지 | 직접 작성 |
 | `frontend` | Next.js · React Native(Expo) · Tailwind + shadcn/ui | 직접 작성 |
 | `backend` | FastAPI 또는 Next.js 서버, 인증, Docker 자체 서버 배포 | 직접 작성 |
