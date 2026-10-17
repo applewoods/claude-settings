@@ -35,6 +35,31 @@ for dir in "$REPO"/skills/*/; do
   link "$REPO/skills/$name" "$CLAUDE_DIR/skills/$name"
 done
 
+echo "auto-sync hooks"
+# ~/.claude/settings.json 에 자동 동기화 hook을 추가한다(기존 설정은 유지, 중복 추가 안 함).
+#   SessionStart → sync.sh pull : 세션 시작 시 다른 컴퓨터의 변경 받기
+#   Stop         → sync.sh push : 턴이 끝날 때 바뀐 설정 커밋·푸시
+SETTINGS="$CLAUDE_DIR/settings.json" SYNC="$REPO/scripts/sync.sh" python3 - <<'PY'
+import json, os
+path, sync = os.environ["SETTINGS"], os.environ["SYNC"]
+data = json.load(open(path)) if os.path.exists(path) and os.path.getsize(path) else {}
+hooks = data.setdefault("hooks", {})
+wanted = {
+    "SessionStart": {"type": "command", "command": f'"{sync}" pull', "timeout": 30},
+    "Stop": {"type": "command", "command": f'"{sync}" push', "async": True, "timeout": 60},
+}
+for event, hook in wanted.items():
+    groups = hooks.setdefault(event, [])
+    if any(h.get("command") == hook["command"] for g in groups for h in g.get("hooks", [])):
+        print(f"  = {event} (이미 등록됨)")
+        continue
+    groups.append({"hooks": [hook]})
+    print(f"  + {event}: {hook['command']}")
+tmp = path + ".tmp"
+json.dump(data, open(tmp, "w"), ensure_ascii=False, indent=2)
+os.replace(tmp, path)
+PY
+
 echo
 echo "완료. 새 Claude Code 세션부터 적용됩니다."
 command -v node >/dev/null && echo "node $(node -v)" || echo "참고: node가 없어 design-taste-frontend의 검사 스크립트는 실행되지 않습니다(Node 22+ 필요)."

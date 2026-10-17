@@ -38,7 +38,8 @@ cd ~/cluade-settings
    - 스킬 폴더마다 `SKILL.md`가 있고, 첫 부분에 `name:`과 `description:`이 있는지 확인한다.
    - 새 세션에서 사용 가능한 스킬 목록에 아래 "구성" 표의 스킬들이 보이는지 확인한다.
 5. **선택 확인**: `node -v`가 22 이상인지, Chrome 계열 브라우저가 있는지 확인하고, 없으면 사용자에게 알린다(설치는 사용자 동의 후).
-6. **하지 말 것**: `~/.claude/settings.json`, 인증 정보, `~/.claude/skills/synced/`(앱이 관리하는 폴더)는 건드리지 않는다. 사용자 확인 없이 기존 파일을 지우지 않는다.
+6. **hook 확인**: `~/.claude/settings.json`의 `hooks.SessionStart`와 `hooks.Stop`에 `scripts/sync.sh`가 등록됐는지 확인한다. `install.sh`가 기존 설정을 유지한 채 추가한다.
+7. **하지 말 것**: `~/.claude/settings.json`의 다른 항목, 인증 정보, `~/.claude/skills/synced/`(앱이 관리하는 폴더)는 건드리지 않는다. 사용자 확인 없이 기존 파일을 지우지 않는다.
 
 ### Windows
 심볼릭 링크에 관리자 권한이나 개발자 모드가 필요합니다. 링크가 어려우면 복사로 설치하세요(대신 `git pull` 후 다시 복사해야 반영됨).
@@ -57,7 +58,8 @@ Get-ChildItem .\skills -Directory | ForEach-Object { Copy-Item $_.FullName "$cla
 ```
 cluade-settings/
 ├── CLAUDE.md          # 전역 지침 → ~/.claude/CLAUDE.md (모든 세션에서 항상 읽힘)
-├── install.sh         # ~/.claude 에 심볼릭 링크 연결
+├── install.sh         # ~/.claude 에 심볼릭 링크 연결 + 자동 동기화 hook 등록
+├── scripts/sync.sh    # 자동 동기화(pull / push), hook이 호출
 └── skills/            # 업무별 매뉴얼 → ~/.claude/skills/<이름>/ (관련 작업일 때만 읽힘)
 ```
 
@@ -85,21 +87,33 @@ cluade-settings/
 
 ---
 
-## 설정을 바꾸고 동기화하기
+## 자동 동기화
 
-설치는 링크 방식이라 `~/.claude/` 쪽을 고치면 곧 이 저장소의 파일을 고치는 것입니다.
+`install.sh`는 `~/.claude/settings.json`에 Claude Code hook 두 개를 등록합니다(기존 설정은 유지). 그래서 평소에는 git 명령을 칠 필요가 없습니다.
+
+| 시점 | hook | 하는 일 |
+|---|---|---|
+| 세션 시작 | `SessionStart` → `scripts/sync.sh pull` | 다른 컴퓨터에서 올린 변경을 받음. 로컬에 커밋 안 된 변경이 있으면 건너뜀 |
+| Claude가 한 턴을 마칠 때 | `Stop` → `scripts/sync.sh push` (백그라운드) | 바뀐 설정이 있으면 자동 커밋·푸시. 변경이 없으면 아무것도 안 함 |
+
+- 링크 방식이라 `~/.claude/CLAUDE.md`나 `~/.claude/skills/<이름>/`을 고치면 곧 이 저장소의 파일을 고치는 것입니다.
+- **새 스킬 자동 편입:** `~/.claude/skills/`에 링크가 아닌 새 스킬 폴더(`SKILL.md` 있음)가 생기면, push 단계에서 저장소 `skills/`로 옮기고 링크로 바꾼 뒤 함께 올립니다. `synced/`(앱이 관리)는 건드리지 않습니다.
+- 두 컴퓨터에서 동시에 바꿨으면 `pull --rebase` 후 다시 푸시합니다. 충돌이 나면 멈추고 `.sync.log`에 남기니 수동으로 해결하세요.
+- 기록: `~/cluade-settings/.sync.log` (git에는 올라가지 않음)
+- 끄기: `~/.claude/settings.json`의 `hooks`에서 `sync.sh`가 들어간 두 항목을 지웁니다.
+- Claude 밖에서(에디터로 직접) 고친 내용은 다음 Claude 턴이 끝날 때 함께 올라갑니다. 바로 올리려면 `~/cluade-settings/scripts/sync.sh push`를 실행하세요.
+
+### 수동으로 할 때
 
 ```bash
-# 이 컴퓨터에서 바꾼 내용 올리기
 cd ~/cluade-settings && git add -A && git commit -m "스킬 수정: ..." && git push
 ```
 
 ```bash
-# 다른 컴퓨터에서 받기
 cd ~/cluade-settings && git pull
 ```
 
-- **새 스킬을 추가하면** `skills/<이름>/SKILL.md`를 만든 뒤 `./install.sh`를 다시 실행해 링크를 겁니다.
+- **새 스킬을 추가하면** 자동 편입되지만, 직접 `skills/<이름>/SKILL.md`를 만들었다면 `./install.sh`를 다시 실행해 링크를 겁니다.
 - **외부 스킬을 추가할 때는** `SKILL.md`와 포함된 스크립트를 먼저 읽고 검토한 뒤 넣습니다. 라이선스 파일도 함께 둡니다.
 - `CLAUDE.md`에는 항상 필요한 규칙만 둡니다. 특정 업무의 세부 규칙은 스킬로 보냅니다.
 
