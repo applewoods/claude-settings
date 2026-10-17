@@ -41,7 +41,7 @@ App Router에서 컴포넌트는 기본이 서버 컴포넌트다. `'use client'
 패턴
 - **잎에 `'use client'`**: 페이지 전체가 아니라 `LikeButton`, `SearchInput`에만.
 - **children으로 서버 컴포넌트를 클라이언트 안에 넣기**: 클라이언트 컴포넌트는 서버 컴포넌트를 import할 수 없지만 `children`/props로 받을 수는 있다. 모달·탭 래퍼에 쓴다.
-- **props는 직렬화 가능해야 한다**: 서버→클라이언트로 함수·클래스 인스턴스를 넘길 수 없다(Server Action은 예외). Date는 넘어가지만 [확인 필요: 프로젝트 React 버전의 직렬화 지원 타입] 문자열로 바꿔 넘기는 편이 안전하다.
+- **props는 직렬화 가능해야 한다**: 서버→클라이언트로 함수·클래스 인스턴스를 넘길 수 없다(Server Action은 예외). 원시값·평범한 객체·배열·`Date`·`Map`·`Set`·Promise는 넘어간다.
 - **서버에서 가져온 데이터를 통째로 넘기지 않는다**: 클라이언트 props는 HTML/RSC 페이로드에 그대로 노출된다. 필요한 필드만 골라 넘긴다(DTO). 비밀번호 해시·내부 ID가 새는 흔한 경로다.
 
 하이드레이션 불일치(콘솔 경고)의 흔한 원인: 렌더 중 `Date.now()`/`Math.random()`, `typeof window` 분기, 브라우저 확장, 잘못된 HTML 중첩(`<p>` 안의 `<div>`). 시간·로케일 의존 값은 클라이언트에서 마운트 후 그리거나 서버에서 고정해 넘긴다.
@@ -100,5 +100,5 @@ Next.js 16부터 **Cache Components**(`next.config`의 `cacheComponents: true`)�
 - prop을 state 초기값으로 복사한 뒤 prop이 바뀌어도 반영 안 됨 → 복사하지 말거나, 리셋이 목적이면 `key`를 바꾼다.
 
 ## 5. 메모이제이션
-- React Compiler가 켜져 있으면(`reactCompiler` 설정 [Next 버전별 옵션 위치 확인 필요]) `useMemo`/`useCallback`/`memo`를 손으로 거의 쓰지 않는다.
+- React Compiler가 켜져 있으면(Next.js 16+: `next.config`의 최상위 `reactCompiler: true` + `babel-plugin-react-compiler`, 15는 `experimental.reactCompiler`) `useMemo`/`useCallback`/`memo`를 손으로 거의 쓰지 않는다. 설정해야 켜지고, 빌드가 약간 느려진다.
 - 꺼져 있으면: 측정(React DevTools Profiler)해서 느린 곳에만. 미리 다 감싸는 것은 코드만 복잡하게 한다.
