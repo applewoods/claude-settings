@@ -108,6 +108,7 @@ Claude가 만든 결과를 **다른 회사의 다른 모델(Codex)**이 근거 �
 | `paper-writing` | 논문 작성·교정·인용 (인용 확인, 원문→수정안 형식) | 직접 작성 |
 | `data-analysis` | 데이터 분석·ML/DL 실험 (누수 방지, 재현성, 실행한 결과만 보고) | 직접 작성 |
 | `service-planning` | 웹·앱 서비스 기획 (PRD, 유저 스토리, 화면 흐름, HTML 목업, MVP) | 직접 작성 |
+| `synthetic-user-research` | 기획 사전 조사: 분포에서 뽑은 페르소나 30~50명 인터뷰를 Claude·Codex로 각각 실행 → 공통 패턴만 `[가설]`로 채택 → 실제 인터뷰 질문지 (근거: Random Silicon Sampling, arXiv:2402.18144) | 직접 작성 |
 | `ux-ui-design` | 디자인 기준(`docs/DESIGN.md`)과 어떤 디자인 스킬을 언제 쓸지 | 직접 작성 |
 | `frontend` | Next.js · React Native(Expo) · Tailwind + shadcn/ui | 직접 작성 |
 | `backend` | FastAPI 또는 Next.js 서버, 인증, Docker 자체 서버 배포 | 직접 작성 |
