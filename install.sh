@@ -35,6 +35,13 @@ for dir in "$REPO"/skills/*/; do
   link "$REPO/skills/$name" "$CLAUDE_DIR/skills/$name"
 done
 
+echo "agents"
+mkdir -p "$CLAUDE_DIR/agents"
+for file in "$REPO"/agents/*.md; do
+  [ -e "$file" ] || continue
+  link "$file" "$CLAUDE_DIR/agents/$(basename "$file")"
+done
+
 echo "auto-sync hooks"
 # ~/.claude/settings.json 에 자동 동기화 hook을 추가한다(기존 설정은 유지, 중복 추가 안 함).
 #   SessionStart → sync.sh pull : 세션 시작 시 다른 컴퓨터의 변경 받기

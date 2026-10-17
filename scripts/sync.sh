@@ -35,6 +35,14 @@ adopt_new_skills() {
     if [ -e "$REPO/skills/$name" ]; then log "건너뜀: skills/$name 이 저장소에 이미 있음"; continue; fi
     mv "$path" "$REPO/skills/$name" && ln -s "$REPO/skills/$name" "$path" && log "새 스킬 편입: $name"
   done
+  # 서브 에이전트 정의(~/.claude/agents/*.md)도 같은 방식으로 편입
+  mkdir -p "$REPO/agents"
+  for path in "$CLAUDE_DIR"/agents/*.md; do
+    [ -f "$path" ] && [ ! -L "$path" ] || continue
+    name="$(basename "$path")"
+    if [ -e "$REPO/agents/$name" ]; then log "건너뜀: agents/$name 이 저장소에 이미 있음"; continue; fi
+    mv "$path" "$REPO/agents/$name" && ln -s "$REPO/agents/$name" "$path" && log "새 에이전트 편입: $name"
+  done
 }
 
 case "$MODE" in
