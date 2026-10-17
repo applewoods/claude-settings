@@ -3,7 +3,7 @@
 여러 컴퓨터에서 Claude Code가 똑같이 동작하도록, 전역 지침(`CLAUDE.md`)과 업무별 매뉴얼(스킬)을 모아 둔 저장소입니다.
 
 **원칙**
-- 메인 Claude가 **오케스트레이터**가 되어 일을 나누고, 역할·난이도별 **서브 에이전트 4명**(scout·builder·expert·verifier)에게 맞는 모델로 맡긴 뒤 검증해서 합친다.
+- 메인 Claude가 **오케스트레이터**가 되어 일을 나누고, **4가지 역할**의 서브 에이전트(scout·builder·expert·verifier)를 일에 필요한 만큼 불러 맞는 모델로 맡긴 뒤 검증해서 합친다. 같은 역할을 여러 명 동시에 부를 수도, 일부만 부를 수도 있다.
 - 업무마다 에이전트를 새로 만들지 않는다. 업무 지식은 **매뉴얼(스킬)**로 쌓는다. 매뉴얼은 인터뷰로 만들고, 결과가 틀리면 채팅이 아니라 매뉴얼을 고친다.
 
 ---
@@ -38,7 +38,7 @@ cd ~/claude-settings
 3. **설치 실행**: `./install.sh`를 실행한다. macOS·Linux는 그대로, Windows는 아래 "Windows" 절을 따른다.
 4. **검증**:
    - `ls -l ~/.claude/CLAUDE.md ~/.claude/skills/`로 각 항목이 이 저장소를 가리키는 심볼릭 링크인지 확인한다.
-   - `ls -l ~/.claude/agents/`로 서브 에이전트 4개(`scout`, `builder`, `expert`, `verifier`)가 링크됐는지 확인한다.
+   - `ls -l ~/.claude/agents/`로 서브 에이전트 정의 파일 4개(`scout`, `builder`, `expert`, `verifier`)가 링크됐는지 확인한다.
    - 스킬 폴더마다 `SKILL.md`가 있고, 첫 부분에 `name:`과 `description:`이 있는지 확인한다.
    - 새 세션에서 사용 가능한 스킬 목록에 아래 "구성" 표의 스킬들이 보이는지 확인한다.
 5. **선택 확인**: `node -v`가 22 이상인지, Chrome 계열 브라우저가 있는지, `codex --version`과 `codex login status`가 되는지 확인하고, 없으면 사용자에게 알린다(설치는 사용자 동의 후, 로그인은 사용자가 직접).
