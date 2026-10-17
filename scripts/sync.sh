@@ -71,10 +71,45 @@ link_repo_items() {
   done
 }
 
+git_busy() {
+  # rebase·merge 도중이거나, 브랜치를 벗어났거나, 미해결 충돌 파일이 있으면 그 이유를 출력한다
+  local p
+  for p in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD; do
+    [ -e "$(git rev-parse --git-path "$p")" ] && { echo "$p 진행 중"; return 0; }
+  done
+  git symbolic-ref -q HEAD >/dev/null || { echo "브랜치가 아닌 상태(detached HEAD)"; return 0; }
+  [ -n "$(git diff --name-only --diff-filter=U)" ] && { echo "미해결 충돌 파일 있음"; return 0; }
+  return 1
+}
+
+notify() {
+  # SessionStart hook 출력: 사용자에게 보이는 systemMessage + Claude가 읽는 additionalContext
+  # (메시지에 큰따옴표·역슬래시를 넣지 않는다)
+  [ "$MODE" = pull ] || return 0
+  printf '{"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$1" "$1"
+}
+
+if reason="$(git_busy)"; then
+  log "동기화 중단: $reason — 수동 확인 필요 ($REPO)"
+  notify "[설정 동기화 중단] $REPO 저장소가 $reason 상태입니다. 자동 동기화를 멈췄으니 직접 정리해 주세요 (git status 확인)."
+  exit 0
+fi
+
 case "$MODE" in
   pull)
     if [ -z "$(git status --porcelain)" ]; then
-      git pull --ff-only -q >>"$LOG" 2>&1 && log "pull 완료" || log "pull 실패"
+      if git pull --ff-only -q >>"$LOG" 2>&1; then
+        log "pull 완료"
+      else
+        log "pull 실패"
+        # 로컬과 원격이 서로 다른 커밋을 가진 경우(다른 컴퓨터와 같은 곳을 고쳐 자동 합치기 실패 등)
+        counts="$(git rev-list --left-right --count 'HEAD...@{u}' 2>/dev/null)"
+        ahead="${counts%%[[:space:]]*}"; behind="${counts##*[[:space:]]}"
+        if [ "${ahead:-0}" -gt 0 ] && [ "${behind:-0}" -gt 0 ]; then
+          log "로컬과 원격이 갈라짐 (로컬 $ahead개, 원격 $behind개) — 수동 확인 필요"
+          notify "[설정 동기화 충돌] $REPO 의 로컬 커밋 ${ahead}개와 원격 커밋 ${behind}개가 갈라져 자동으로 합치지 못했습니다. git pull --rebase 로 직접 합쳐 주세요."
+        fi
+      fi
     else
       log "로컬 변경이 있어 pull 생략"
     fi
@@ -91,7 +126,16 @@ case "$MODE" in
       log "push 완료 ($changed)"
     else
       # 다른 컴퓨터에서 먼저 올린 경우: 받아서 합친 뒤 다시 시도
-      git pull --rebase -q >>"$LOG" 2>&1 && git push -q >>"$LOG" 2>&1 && log "rebase 후 push 완료" || log "push 실패 — 수동 확인 필요"
+      if git pull --rebase -q >>"$LOG" 2>&1; then
+        git push -q >>"$LOG" 2>&1 && log "rebase 후 push 완료" || log "push 실패 — 수동 확인 필요"
+      else
+        # 같은 줄을 고쳐 충돌하면 rebase를 취소해 브랜치·로컬 커밋을 그대로 되돌린다
+        # (충돌 표식이 든 파일이 ~/.claude 링크로 바로 쓰이거나 다음 push에 커밋되지 않게)
+        if [ -e "$(git rev-parse --git-path rebase-merge)" ] || [ -e "$(git rev-parse --git-path rebase-apply)" ]; then
+          git rebase --abort >>"$LOG" 2>&1 && log "충돌로 rebase 취소 (로컬 커밋 보존)" || log "rebase 취소 실패"
+        fi
+        log "push 실패 — 수동 확인 필요"
+      fi
     fi
     ;;
 esac
