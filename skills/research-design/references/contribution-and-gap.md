@@ -69,7 +69,7 @@
 - 나쁜 예: "We propose a dual-branch encoder with a gated fusion module and a contrastive loss."
 - 좋은 예: "We show that separating evidence extraction from generation reduces factual errors in clinical summaries by X% without fine-tuning (Sec. 5.1)." (X는 실제 결과로만 채운다)
 - 기획 단계에서는 결과 자리를 비워 두고 "[결과: Table 2에서 확인 예정]"처럼 검증 위치만 연결한다.
-- 기여 2–4개. 데이터셋·코드 공개는 단독 기여로 세지 않는 학회가 많다(벤치마크 트랙 제외).
+- 기여 2–4개. 코드 공개만으로는 보통 독립 기여로 보지 않는다. 데이터셋은 그 자체가 연구 기여일 때(새로 측정하는 것이 있을 때) 기여로 세고, 벤치마크·데이터 트랙 여부는 투고처 CFP로 확인한다.
 
 **흔한 실수**
 - 기여를 모듈 목록으로 씀.

@@ -10,14 +10,14 @@
 - AI 도구는 **저자가 될 수 없다** (아래 확인한 곳 모두).
 - 저자는 AI가 만든 내용(문장·그림·참고문헌·코드)을 포함한 **모든 내용에 책임**진다. 검증 안 된 AI 생성 참고문헌을 넣지 않는다.
 - 연구 방법 자체에 LLM을 썼다면(데이터 생성·주석·평가자 등) 고지와 별개로 **방법 섹션에 기술**한다.
-- 맞춤법·문법 검사 수준은 대부분 고지 면제지만, 면제 범위가 다르다.
+- 맞춤법·문법 검사 수준은 여러 곳에서 고지 면제지만 면제 범위가 다르고, ICLR 2026처럼 문법 교정까지 고지를 요구하는 곳도 있다.
 
 ### 확인한 정책 요약
 | 투고처 | 고지 위치·범위 (요약) | 출처 |
 |---|---|---|
 | ACL (ACL Anthology 계열 학회) | 언어 다듬기(자기 글 paraphrase·polish)와 문법 검사는 허용. 내용 생성·아이디어 제안 등은 Acknowledgements 절에 고지(예: 어느 절이 어떤 도구 입력으로 쓰였는지). rebuttal 작성도 대상. 숨겨진 프롬프트 삽입 금지. 리뷰어는 원고를 비공개 보장 없는 도구에 올릴 수 없음 | https://www.aclweb.org/adminwiki/index.php/ACL_Policy_on_Publication_Ethics |
 | NeurIPS 2025 | LLM 사용 자체는 허용. 방법론에 중요한·비표준적 LLM 사용은 논문에 기술. 글쓰기·편집·서식만이면 원고 고지 불필요(대신 별도 설문 보고). 리뷰어는 제출물을 LLM에 공유 금지 | https://neurips.cc/Conferences/2025/LLM |
-| ICLR 2026 | 광범위한 LLM 사용을 고지하지 않으면 desk reject 대상으로 공지. 환각(존재하지 않는) 참고문헌이 확인된 논문은 desk reject됨 | https://blog.iclr.cc/2025/11/19/iclr-2026-response-to-llm-generated-papers-and-reviews/ , https://blog.iclr.cc/2026/03/31/a-retrospective-on-the-iclr-2026-review-process/ |
+| ICLR 2026 | **모든** LLM 사용(문법·표현 개선 포함)을 논문 본문과 제출 양식 **두 곳 모두**에 고지. 광범위한 사용을 고지하지 않으면 desk reject 대상으로 공지. 환각(존재하지 않는) 참고문헌이 확인된 논문은 desk reject됨 | https://blog.iclr.cc/2025/08/26/policies-on-large-language-model-usage-at-iclr-2026/ , https://blog.iclr.cc/2025/11/19/iclr-2026-response-to-llm-generated-papers-and-reviews/ , https://blog.iclr.cc/2026/03/31/a-retrospective-on-the-iclr-2026-review-process/ |
 | Elsevier 저널 | 원고 끝(참고문헌 바로 앞)에 별도 AI 선언문. 연구 과정의 AI 사용(분석·코드)은 Methods에. 철자·문법 기본 검사 등은 면제. 이미지는 범주별로 다름: 설명용 도식은 허용(캡션·선언문에 도구 고지), 데이터 시각화는 데이터에서 재현 가능한 방법일 때만(Methods에 고지), 1차 연구 이미지(현미경·영상의학 등)의 AI 생성·변형 금지 — 단 AI가 정식 연구 방법의 일부(예: 영상 분석 모델)이면 Methods에 재현 가능하게 기술하는 조건으로 별도 취급, 그래픽 초록은 범용 생성형 AI 사용 금지, 표지 이미지는 사전 허락 필요 | https://www.elsevier.com/about/policies-and-standards/generative-ai-policies-for-journals |
 | IEEE | AI 생성 내용(텍스트·그림·이미지·코드)은 Acknowledgments에 도구명·해당 절·사용 범위 고지. 편집·문법 수준은 일반적으로 대상 밖이나 고지 권장. 학회·저널별 문구 차이 있음 | https://open.ieee.org/author-guidelines-for-artificial-intelligence-ai-generated-text/ |
 | Springer Nature, ACM, 국내 학회(정보과학회 등) | 이번에 세부 문구 확인 못 함 `[확인 필요]` | — |
