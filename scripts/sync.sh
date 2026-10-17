@@ -8,6 +8,7 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+[ -n "${CLAUDE_CONFIG_DIR:-}${HOME:-}" ] || exit 0
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 LOG="$REPO/.sync.log"
 MODE="${1:-push}"
@@ -74,7 +75,7 @@ link_repo_items() {
 git_busy() {
   # rebase·merge 도중이거나, 브랜치를 벗어났거나, 미해결 충돌 파일이 있으면 그 이유를 출력한다
   local p
-  for p in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD; do
+  for p in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD sequencer BISECT_LOG; do
     [ -e "$(git rev-parse --git-path "$p")" ] && { echo "$p 진행 중"; return 0; }
   done
   git symbolic-ref -q HEAD >/dev/null || { echo "브랜치가 아닌 상태(detached HEAD)"; return 0; }
@@ -84,9 +85,11 @@ git_busy() {
 
 notify() {
   # SessionStart hook 출력: 사용자에게 보이는 systemMessage + Claude가 읽는 additionalContext
-  # (메시지에 큰따옴표·역슬래시를 넣지 않는다)
   [ "$MODE" = pull ] || return 0
-  printf '{"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$1" "$1"
+  local s="$1"
+  s="${s//\\/\\\\}"; s="${s//\"/\\\"}"                          # JSON 문자열 이스케이프
+  s="$(printf '%s' "$s" | tr '\000-\037' ' ')"                   # 개행 등 제어 문자는 공백으로
+  printf '{"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$s" "$s"
 }
 
 if reason="$(git_busy)"; then
