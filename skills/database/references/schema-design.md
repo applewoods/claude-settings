@@ -14,7 +14,7 @@
 | 리포트·대시보드 집계 | 원본 테이블에 컬럼을 추가하지 말고 materialized view(`REFRESH MATERIALIZED VIEW CONCURRENTLY`는 unique index 필요) 또는 별도 집계 테이블 |
 | 검색용 파생값(소문자 이메일, tsvector) | generated column. PG18부터 기본이 VIRTUAL(조회 시 계산). 검색용이면 `STORED`로 명시하거나 원본 식에 표현식 인덱스를 건다(virtual 컬럼 자체에는 인덱스를 못 거는 것으로 알려짐 [확인 필요: PG18 CREATE INDEX 문서]) |
 
-흔한 실수: "조인이 느리다"는 추측으로 처음부터 비정규화. PostgreSQL은 인덱스가 맞으면 수백만 행 조인도 ms 단위다. 느린 원인의 대부분은 조인이 아니라 인덱스 누락·N+1이다(`indexing-and-queries.md`).
+흔한 실수: "조인이 느리다"는 추측으로 처음부터 비정규화. 조인 키에 인덱스가 있고 결과 행이 적으면 큰 테이블 조인도 대개 충분히 빠르다. 웹 서비스에서 느린 쿼리의 흔한 원인은 조인 자체보다 인덱스 누락·N+1이다(경험칙 — `EXPLAIN`으로 확인, `indexing-and-queries.md`).
 
 ## 2. 키 전략: bigint identity vs UUID
 
@@ -38,7 +38,7 @@
 - **시각은 항상 `timestamptz`.** `timestamp`(without time zone)는 서버·세션 타임존이 바뀌면 의미가 깨진다. 저장은 UTC 기준, 표시는 앱에서.
 - **문자열은 `text` + 필요하면 `CHECK (char_length(x) <= n)`.** PostgreSQL에서 `varchar(n)`과 `text`는 성능이 같다. 길이 제한을 바꿀 때 CHECK가 더 다루기 쉽다.
 - **돈은 `numeric(p,s)` 또는 최소 단위 정수(원, 센트를 `bigint`).** `float`/`real`/`money` 금지(반올림 오차, 로케일 의존).
-- **이메일 대소문자 무시 유일성**: `UNIQUE (lower(email))` 표현식 인덱스. `citext` 확장도 되지만 확장 의존이 늘어난다.
+- **이메일 대소문자 무시 유일성**: `CREATE UNIQUE INDEX ... ON users (lower(email))` 표현식 유니크 인덱스(테이블 제약 `UNIQUE (...)`에는 식을 못 쓴다). `citext` 확장도 되지만 확장 의존이 늘어난다.
 - **상태값**: 
   - 값이 거의 안 바뀜 → `text + CHECK (status IN (...))`. 값 추가 시 제약만 교체.
   - PG `ENUM`은 값 추가(`ALTER TYPE ... ADD VALUE`)는 쉽지만 **삭제·이름 변경·순서 변경이 어렵다.** 바뀔 가능성이 있으면 피한다.
@@ -58,7 +58,7 @@
   - `CASCADE`: 자식이 부모 없이는 의미가 없는 "구성 요소"일 때만(주문 → 주문항목). 사용자 → 결제 기록 같은 곳에 걸면 사용자 삭제가 회계 기록까지 지운다.
   - `SET NULL`: 관계가 선택적일 때(담당자 퇴사 → 담당자 비움).
 - `CHECK`: 범위(`price >= 0`), 상호 조건(`ends_at > starts_at`), 상태별 필수값(`status <> 'shipped' OR shipped_at IS NOT NULL`).
-- 겹치면 안 되는 기간(예약): `EXCLUDE USING gist (room_id WITH =, during WITH &&)` (`btree_gist` 확장 필요). PG18은 `PRIMARY KEY/UNIQUE ... WITHOUT OVERLAPS` 임시(temporal) 제약도 지원한다.
+- 겹치면 안 되는 기간(예약): `EXCLUDE USING gist (room_id WITH =, during WITH &&)` (`btree_gist` 확장 필요). PG18은 `PRIMARY KEY/UNIQUE ... WITHOUT OVERLAPS` 시간적(temporal) 제약도 지원한다.
 - 운영 중인 큰 테이블에 제약을 추가할 때는 `NOT VALID` → `VALIDATE` 2단계(`migrations.md`).
 
 ## 5. 공통 컬럼
@@ -90,7 +90,7 @@
 |---|---|---|
 | **공유 테이블 + `tenant_id` 컬럼** | 기본값. 테넌트 수가 많고 스키마가 같을 때 | 모든 쿼리에 tenant 조건 누락 = 데이터 유출. RLS로 이중 방어(`security-privacy.md`). 인덱스·unique는 `tenant_id`를 **맨 앞**에: `UNIQUE (tenant_id, email)` |
 | 스키마 분리(tenant별 schema) | 테넌트 수십 개 이하, 테넌트별 커스터마이즈가 필요할 때 | 마이그레이션을 N번 실행, 수천 개면 카탈로그·도구가 버거움 |
-| DB 분리 | 규제·계약상 물리 분리 요구, 대형 고객 소수 | 운영 비용 최고. 연결 풀도 테넌트 수만큼 |
+| DB 분리 | 규제·계약상 분리 요구, 대형 고객 소수 | 운영 비용 최고. 연결 풀도 테넌트 수만큼. **같은 인스턴스의 DB·스키마 분리는 논리 분리일 뿐**이다 — 물리 격리(별도 인스턴스·호스트·저장소)가 요구되면 인스턴스 분리 |
 
 - 자식 테이블에도 `tenant_id`를 중복 저장하고 FK를 `(tenant_id, parent_id)` 복합으로 걸면 다른 테넌트 부모를 가리키는 행을 DB가 막는다.
 - 연구 데모·단일 사용자 앱에는 테넌트 개념을 넣지 않는다(과설계).

@@ -59,7 +59,7 @@ API·인증·비밀번호 해시 알고리즘·서버 배포는 `backend` 스킬
 | 상태값 | `text + CHECK` | 값에 속성이 붙음 → 참조 테이블. 절대 안 바뀜 → ENUM |
 | 반구조 데이터 | 컬럼 | 키가 행마다 다르고 조건 검색이 드묾(원문 페이로드, 사용자 정의 필드) → JSONB |
 | 삭제 | 하드 삭제 | 사용자 복구 기능 → 소프트 삭제 + 부분 unique. 변경 추적 → 감사 로그 테이블 |
-| 다중 테넌트 | 공유 테이블 + `tenant_id`(+[출시] RLS) | 규제상 물리 분리 → 스키마/DB 분리 |
+| 다중 테넌트 | 공유 테이블 + `tenant_id`(+[출시] RLS) | 테넌트별 커스터마이즈·계약상 분리 → 스키마/DB 분리(논리 분리). 물리 격리 요구 → 별도 인스턴스 |
 | 인덱스 종류 | B-tree(등호 → 범위·정렬 순 복합) | JSONB·배열·전문검색·부분문자열 → GIN, 범위 겹침 → GiST, 거대 append-only 시계열 → BRIN |
 | 페이지네이션 | keyset(`(created_at, id) <`) | 관리자 화면·소량·페이지 번호 필요 → OFFSET |
 | 동시 갱신 | 원자적 UPDATE(`SET n = n - 1 WHERE n > 0`), `ON CONFLICT` | 폼 편집 충돌 → 낙관적(version). 복잡한 판단 → `FOR UPDATE`. 작업 큐 → `FOR UPDATE SKIP LOCKED` |
@@ -74,7 +74,7 @@ API·인증·비밀번호 해시 알고리즘·서버 배포는 `backend` 스킬
 ## 하지 말 것
 - 운영 DB에서 확인 없이 `DELETE`/`UPDATE`/`DROP`/`TRUNCATE`, `docker compose down -v`, 세션 강제 종료.
 - `lock_timeout` 없는 운영 DDL, 운영 중 일반 `CREATE INDEX`·`VACUUM FULL`.
-- 이미 적용된 마이그레이션 파일 수정, 운영에 `db push`/`migrate dev`.
+- 이미 적용된 마이그레이션 파일 수정, `push`(Drizzle·Prisma) 사용, 운영에 `migrate dev`.
 - 앱을 superuser(Docker의 `POSTGRES_USER`)로 접속시키기, DB 포트 외부 공개.
 - 메이저 버전 업그레이드를 이미지 태그 교체만으로 하기(데이터 형식이 다르다).
 - 문자열을 이어 붙여 SQL 만들기.

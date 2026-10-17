@@ -85,7 +85,7 @@ SELECT set_config('app.tenant_id', $1, true);   -- true = 트랜잭션 로컬(Pg
 
 - 운영 데이터를 로컬·개발로 복사하지 않는다. 필요하면 가짜 데이터 생성(Faker 등) 또는 마스킹된 추출본.
 - 시드·픽스처 파일에 실제 이메일·전화번호 금지(`example.com`, `010-0000-0000` 형식).
-- 로그 설정: `log_statement = 'all'`은 파라미터 값(개인정보·비밀번호)까지 남길 수 있다 → 운영은 `ddl` 또는 `none`, 느린 쿼리 로그만.
+- 로그 설정: `log_statement = 'all'`은 파라미터 값(개인정보·비밀번호)까지 남길 수 있다 → 운영은 `ddl` 또는 `none`. 단 **느린 쿼리 로그(`log_min_duration_statement`)와 에러 로그에도 SQL 리터럴과 바인드 값이 남을 수 있다** → `log_parameter_max_length = 0`, `log_parameter_max_length_on_error = 0`으로 값 기록을 끄고, 개인정보를 SQL 리터럴로 넣지 않는다(바인딩). `pg_stat_statements`는 상수를 `$1`로 정규화하지만 로그 파일은 아니다. 로그 파일도 개인정보로 취급해 보존 기간을 정한다.
 - 에러 메시지에 SQL 원문·파라미터를 사용자에게 노출하지 않는다(backend 스킬의 에러 처리 규칙과 함께).
 
 ## 6. SQL injection (DB 관점)

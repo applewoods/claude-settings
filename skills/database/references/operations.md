@@ -13,6 +13,7 @@ services:
       POSTGRES_DB: app
       POSTGRES_USER: app_owner
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password   # 또는 .env의 POSTGRES_PASSWORD (backend 스킬의 비밀값 규칙)
+    secrets: [db_password]
     volumes:
       - pgdata:/var/lib/postgresql     # PG18+ 이미지: /var/lib/postgresql. PG17 이하: /var/lib/postgresql/data
     shm_size: 256mb                    # 기본 64MB는 병렬 쿼리·큰 정렬에서 부족할 수 있음
@@ -22,6 +23,9 @@ services:
     # ports: 운영에서는 열지 않는다. 같은 compose 네트워크의 앱만 접근
 volumes:
   pgdata:
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt   # .gitignore에 추가
 ```
 - **볼륨 경로가 PG18 이미지에서 바뀌었다.** 공식 `postgres` 이미지는 18부터 `PGDATA=/var/lib/postgresql/18/docker`, VOLUME은 `/var/lib/postgresql`. 17 이하 방식(`/var/lib/postgresql/data`)으로 마운트하면 컨테이너를 다시 만들 때 데이터가 사라질 수 있다. 이미지 버전을 바꾸기 전 반드시 확인. pgvector 이미지도 공식 이미지 기반이다 [확인 필요: pgvector 이미지가 같은 경로 규칙을 따르는지].
 - `docker-entrypoint-initdb.d` 스크립트와 `POSTGRES_*` 환경변수는 **데이터 디렉터리가 비어 있을 때만** 적용된다. 이미 초기화된 볼륨에서 비밀번호 환경변수를 바꿔도 비밀번호는 안 바뀐다(`ALTER ROLE`로).

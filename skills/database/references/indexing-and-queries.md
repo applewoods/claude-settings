@@ -83,14 +83,14 @@ LIMIT 20;
 | `WHERE lower(email) = ?`, `WHERE date(created_at) = ?` | 컬럼에 함수 → 일반 인덱스 못 씀 | 표현식 인덱스, 또는 범위로 바꾸기: `created_at >= '2026-10-01' AND created_at < '2026-10-02'` |
 | `LIKE '%검색어%'` | 앞이 와일드카드 → B-tree 불가 | `pg_trgm` + GIN. 한국어 형태소 검색이 필요하면 전문 검색 엔진·확장 검토 [확인 필요: 한국어 형태소 분석 확장 선택] |
 | 타입 불일치(`bigint` 컬럼에 문자열 파라미터, `varchar` vs `text` 조인 시 캐스트) | 암묵 캐스트로 인덱스 무시 가능 | 파라미터 타입을 컬럼과 맞춘다 |
-| `WHERE a = ? OR b = ?` | 단일 인덱스로 처리 곤란 | 각 컬럼 인덱스(BitmapOr) 또는 `UNION ALL` |
+| `WHERE a = ? OR b = ?` | 단일 인덱스로 처리 곤란 | 각 컬럼 인덱스(BitmapOr가 자동). 분기로 나누려면 `UNION`(중복 제거). `UNION ALL`은 두 조건이 상호 배타적일 때만 — 아니면 같은 행이 두 번 나온다 |
 | `NOT IN (서브쿼리)` | 서브쿼리에 NULL이 하나라도 있으면 결과가 비어버림(정확성 버그) + 느림 | `NOT EXISTS` |
 | `SELECT *` | 불필요한 큰 컬럼(TOAST된 텍스트·JSONB·벡터)까지 읽음, index-only scan 불가 | 필요한 컬럼만 |
 | 큰 `IN (...)` 목록(수천 개) | 파싱·계획 비용 | `= ANY($1::bigint[])` 배열 파라미터, 또는 임시 테이블 조인 |
 | 대량 DELETE/UPDATE 한 번에 | 긴 트랜잭션, 락, WAL 폭증, 복제 지연 | 1천~1만 행 배치로 나눠 커밋(`migrations.md` 백필) |
 | `ORDER BY random() LIMIT n` | 전체 정렬 | `TABLESAMPLE` 또는 ID 범위 샘플링 |
 | 루프 안에서 단건 INSERT | 왕복 N번 | 배치 INSERT, `COPY`(대량 적재 시 가장 빠름) |
-| 프리페어드 문장이 generic plan으로 바뀐 뒤 느려짐 | 6회 실행 후 일반 계획 선택 → 값 분포 편향 시 나쁨 | `plan_cache_mode = force_custom_plan`(해당 쿼리/역할 한정) |
+| 프리페어드 문장이 generic plan으로 바뀐 뒤 느려짐 | 처음 5회는 custom plan, 이후 generic plan의 추정 비용이 custom plan 평균보다 크게 나쁘지 않으면 generic으로 전환 → 값 분포가 편향되면 나쁜 계획이 고정될 수 있음 | `plan_cache_mode = force_custom_plan`(해당 쿼리/역할 한정) |
 
 ## 7. 쿼리 작성 규칙
 

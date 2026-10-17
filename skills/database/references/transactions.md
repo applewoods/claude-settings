@@ -36,7 +36,7 @@
 | 행이 아닌 "논리적 자원" 직렬화(사용자별 정산 1개만 동시 실행) | advisory lock: `pg_advisory_xact_lock(hashtext('settle:' || user_id))`. PgBouncer transaction 모드에서는 **xact 버전만** 쓴다(세션 버전은 다른 클라이언트에 새어 나감) |
 | 같은 요청 재전송(결제 버튼 두 번, 네트워크 재시도) | **멱등성 키**: 클라이언트가 보낸 키에 unique 제약, 이미 있으면 저장된 결과 반환 |
 
-`FOR UPDATE` 변형: 자식 행 삽입만 막으면 되는 경우 `FOR NO KEY UPDATE`가 FK 검사와 덜 충돌한다. 잠금 대기를 원치 않으면 `NOWAIT`(즉시 에러).
+`FOR UPDATE` 변형: 키가 아닌 컬럼만 바꿀 거라면 `FOR NO KEY UPDATE` — 자식 INSERT의 FK 검사(`FOR KEY SHARE`)와 충돌하지 않아 경합이 적다(즉 자식 삽입을 **막지 않는다**; 막아야 하면 `FOR UPDATE`). 잠금 대기를 원치 않으면 `NOWAIT`(즉시 에러).
 
 ## 4. 락 이해 — 운영에서 문제를 일으키는 것들
 

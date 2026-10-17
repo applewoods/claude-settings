@@ -8,8 +8,8 @@
 | 스택 | 도구 | 꼭 알아둘 것 |
 |---|---|---|
 | Python | Alembic(+SQLAlchemy) | `--autogenerate`는 초안일 뿐이다. **테이블·컬럼 이름 변경을 감지하지 못해 drop + add로 만든다(데이터 소실).** 서버 기본값·enum 값 변경·일부 제약도 놓칠 수 있다 → 생성된 파일을 반드시 읽고 고친다. `CONCURRENTLY`는 `op.get_context().autocommit_block()` 안에서 |
-| TS | Drizzle Kit | `drizzle-kit generate`로 SQL 파일을 만들고 리뷰 후 `migrate`. `push`는 마이그레이션 기록 없이 스키마를 맞추므로 **로컬 프로토타입에만** |
-| TS | Prisma Migrate | `migrate dev`는 로컬 전용(리셋을 제안할 수 있음), 운영은 `migrate deploy`. 생성 SQL을 직접 고칠 수 있다(`--create-only`). `db push`도 로컬 프로토타입에만 |
+| TS | Drizzle Kit | `drizzle-kit generate`로 SQL 파일을 만들고 리뷰 후 `migrate`. `push`는 마이그레이션 기록 없이 스키마를 맞추므로 **쓰지 않는다**(로컬 포함 — 이력 없는 스키마가 생긴다) |
+| TS | Prisma Migrate | `migrate dev`는 로컬 전용(리셋을 제안할 수 있음), 운영은 `migrate deploy`. 생성 SQL을 직접 고칠 수 있다(`--create-only`). `db push`도 쓰지 않는다 |
 
 - 트랜잭션 DDL: PostgreSQL은 DDL을 트랜잭션 안에서 실행할 수 있어 마이그레이션 중간 실패 시 전체 롤백이 가능하다. **예외**: `CREATE/DROP INDEX CONCURRENTLY`, `ALTER TYPE ... ADD VALUE`(PG12+는 트랜잭션 안에서 가능하나 새 값은 커밋 전에 못 씀), `VACUUM` 등은 트랜잭션 밖에서. Prisma·Drizzle이 마이그레이션 파일을 트랜잭션으로 감싸는지는 도구 버전마다 다르다 [확인 필요: 사용 중인 버전 문서] → `CONCURRENTLY`는 별도 마이그레이션 파일로 분리.
 - **마이그레이션은 한 곳에서 한 번만 실행.** 앱 컨테이너가 여러 개일 때 각 컨테이너 시작 시 자동 실행하면 동시 실행 경쟁이 생긴다 → 배포 파이프라인의 별도 단계(일회성 컨테이너/job)로 실행.
