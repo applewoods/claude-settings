@@ -5,6 +5,8 @@ description: 데이터 분석·실험 매뉴얼. 표(CSV/엑셀/Parquet)·텍스
 
 # 데이터 분석 매뉴얼
 
+> **팀으로 진행:** 여러 단계이거나 검증이 중요한 일은 `team-orchestration` 스킬의 "데이터 분석" 팀 구성(scout·builder·expert·verifier)으로 나눠 맡긴다. 각 팀원은 이 매뉴얼을 따른다.
+
 ## 환경과 코드
 - 환경은 conda. 새 패키지가 필요하면 설치 명령(`conda install` 또는 `pip install`)을 먼저 보여 주고 묻는다.
 - 코드는 스크립트(.py)로 작성한다. 노트북은 내가 요청할 때만.

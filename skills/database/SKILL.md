@@ -5,6 +5,8 @@ description: 데이터베이스 매뉴얼. 테이블·스키마를 설계하거�
 
 # 데이터베이스 매뉴얼
 
+> **팀으로 진행:** 여러 단계이거나 검증이 중요한 일은 `team-orchestration` 스킬의 "개발" 팀 구성(scout·builder·expert·verifier)으로 나눠 맡긴다. 각 팀원은 이 매뉴얼을 따른다.
+
 ## 기본 스택
 - **DB**: PostgreSQL. 로컬과 운영 모두 Docker로 띄운다.
 - **벡터 검색**: pgvector(PostgreSQL 확장). 별도 벡터 DB는 규모상 꼭 필요할 때만 제안한다.

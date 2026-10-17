@@ -5,6 +5,8 @@ description: 백엔드 개발 매뉴얼. API 서버를 설계·구현할 때, �
 
 # 백엔드 매뉴얼
 
+> **팀으로 진행:** 여러 단계이거나 검증이 중요한 일은 `team-orchestration` 스킬의 "개발" 팀 구성(scout·builder·expert·verifier)으로 나눠 맡긴다. 각 팀원은 이 매뉴얼을 따른다.
+
 ## 스택 선택: 상황에 따라 추천
 프로젝트를 시작할 때 아래 기준으로 추천하고, 이유를 한두 줄로 설명한 뒤 확정한다.
 - **화면 중심·단순 CRUD** → Next.js 서버 기능(Route Handlers / Server Actions). FE와 한 프로젝트로 관리.

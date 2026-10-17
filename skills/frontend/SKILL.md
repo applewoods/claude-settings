@@ -5,6 +5,8 @@ description: 프론트엔드 개발 매뉴얼. 웹 화면(Next.js)이나 모바�
 
 # 프론트엔드 매뉴얼
 
+> **팀으로 진행:** 여러 단계이거나 검증이 중요한 일은 `team-orchestration` 스킬의 "개발" 팀 구성(scout·builder·expert·verifier)으로 나눠 맡긴다. 각 팀원은 이 매뉴얼을 따른다.
+
 ## 기본 스택
 - **웹**: Next.js (App Router). 템플릿 기본 설정(TypeScript)을 따른다.
 - **모바일 앱**: React Native + Expo. 웹과 공유할 수 있는 로직·타입은 함께 쓴다.

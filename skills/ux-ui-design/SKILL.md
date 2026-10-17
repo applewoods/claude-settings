@@ -5,6 +5,8 @@ description: UX/UI 디자인 진행 매뉴얼. 서비스의 화면 디자인·�
 
 # UX/UI 디자인 매뉴얼
 
+> **팀으로 진행:** 여러 단계이거나 검증이 중요한 일은 `team-orchestration` 스킬의 "UX/UI 디자인" 팀 구성(scout·builder·expert·verifier)으로 나눠 맡긴다. 각 팀원은 이 매뉴얼을 따른다.
+
 전문 지식은 다른 스킬에 맡기고, 이 매뉴얼은 **순서와 연결**만 정한다.
 
 ## 1. 기준부터 만든다: `docs/DESIGN.md`
