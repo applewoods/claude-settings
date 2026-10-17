@@ -31,7 +31,7 @@ DB 스키마·마이그레이션·쿼리·백업 세부는 `database` 스킬, �
 프로젝트를 시작할 때 아래 기준으로 추천하고, 이유를 한두 줄로 설명한 뒤 확정한다.
 - **화면 중심·단순 CRUD** → Next.js 서버 기능(Route Handlers / Server Actions). FE와 한 프로젝트로 관리.
 - **AI 모델·데이터 처리·Python 코드가 많음** → FastAPI(Python). FE(Next.js)와 분리.
-- 둘 다 해당하면: Next.js가 화면과 일반 API를, FastAPI가 AI·무거운 처리를 맡는 구성을 검토한다. 같은 도메인에서 경로로 나누면 CORS·쿠키 문제가 사라진다(`references/architecture.md` 6절).
+- 둘 다 해당하면: Next.js가 화면과 일반 API를, FastAPI가 AI·무거운 처리를 맡는 구성을 검토한다. 같은 origin에서 경로로 나누면 CORS가 필요 없어진다. 인증 전달 방식은 따로 정한다(`references/architecture.md` 6절, `references/auth-security.md` 2절).
 
 ## 인증: 상황에 따라 추천
 - 직접 구현하지 않는다. 검증된 라이브러리를 쓴다.

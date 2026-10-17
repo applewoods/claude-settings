@@ -19,7 +19,8 @@
 - **데이터가 크다(수만 이상)**: train/val/test 홀드아웃. 튜닝은 val, 최종 1회는 test.
 - **데이터가 작거나 중간**: 테스트를 떼어 두고 train 안에서 CV로 튜닝 → test 1회. 또는
 - **중첩 CV**: 바깥 루프는 성능 추정, 안쪽 루프는 튜닝. 바깥 fold마다 고른 하이퍼파라미터가 다를 수 있다(정상). 보고하는 점수는 바깥 fold 점수다. CV로 튜닝하고 같은 CV 점수를 보고하면 선택 편향으로 낙관적이다(Varma & Simon 2006; Cawley & Talbot 2010).
-  - sklearn: `cross_val_score(GridSearchCV(pipe, grid, cv=inner), X, y, cv=outer, groups=...)`. 그룹이 있으면 안쪽 CV에도 그룹을 넘겨야 한다(`params={"groups": groups}`를 쓰려면 metadata routing 설정 필요 [확인 필요: sklearn 버전별 방식]). 단순하게는 바깥 fold 루프를 직접 쓰고 안쪽에 `GridSearchCV(cv=GroupKFold()).fit(X_tr, y_tr, groups=g_tr)`.
+  - sklearn(그룹 없음): `cross_val_score(GridSearchCV(pipe, grid, cv=inner), X, y, cv=outer)`.
+  - **그룹이 있으면 안쪽 CV에도 그룹이 전달돼야 한다.** sklearn 1.9에서 `cross_val_score(..., groups=g)`만 쓰면 안쪽 `GroupKFold`가 groups를 받지 못해 모든 fit이 실패한다(직접 확인). 방법: `sklearn.set_config(enable_metadata_routing=True)` 후 `cross_val_score(GridSearchCV(pipe, grid, cv=GroupKFold(3)), X, y, cv=GroupKFold(5), params={"groups": g})`. 더 단순하게는 바깥 fold 루프를 직접 쓰고 안쪽에서 `GridSearchCV(cv=GroupKFold()).fit(X_tr, y_tr, groups=g_tr)`.
 - **딥러닝**: 보통 고정 val로 조기 종료·튜닝 + test 1회 + 여러 시드. 데이터가 작으면 fold × 시드 반복.
 - 조기 종료 기준(epoch)도 하이퍼파라미터다. test로 정하지 않는다.
 

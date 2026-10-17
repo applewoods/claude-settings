@@ -12,7 +12,7 @@
 | API4 | 자원 소비 무제한 | `limit=100000`, 100MB 업로드, 긴 프롬프트로 LLM 비용 폭발 | 페이지 상한, 본문 크기 제한(프록시+앱), 레이트 리밋, 사용자별 LLM 예산(`ai-features.md`) |
 | API5 | 기능 수준 권한 누락 | 일반 사용자가 `/admin/*`나 `DELETE` 호출 성공 | 기본 거부(deny by default). 라우터 단위로 역할 의존성(FastAPI `Depends`)을 걸고, 관리자 라우트는 별도 묶음으로 |
 | API6 | 민감한 업무 흐름 남용 | 가입 보상·쿠폰·무료 크레딧을 봇이 대량 획득 | 흐름 단위 제한(계정·IP·기기), 이메일 인증, 이상 사용 알림 **[출시]** |
-| API7 | SSRF | "URL 요약" 기능에 `http://169.254.169.254/` 또는 `http://db:5432` 입력 | URL 가져오기는 허용 스킴(https)만, DNS 해석 후 사설·루프백·링크로컬 IP 차단, 리다이렉트 재검사, 응답 크기·시간 제한. LLM 도구가 URL을 가져올 때도 동일 |
+| API7 | SSRF | "URL 요약" 기능에 `http://169.254.169.254/` 또는 `http://db:5432` 입력 | URL 가져오기는 허용 스킴(https)만, DNS 해석 후 사설·루프백·링크로컬 IP 차단 + **검사한 그 IP로 연결**(따로 다시 해석하면 DNS rebinding으로 우회된다), 리다이렉트마다 재검사, 응답 크기·시간 제한. 가능하면 가져오기 전용 워커를 내부망에 접근 못 하는 네트워크에 둔다(egress 차단). LLM 도구가 URL을 가져올 때도 동일 |
 | API8 | 보안 설정 오류 | 운영에서 debug 켜짐, 기본 비밀번호, DB 포트 공개, CORS `*` | 운영 설정 체크리스트(`deployment.md`), 보안 헤더 |
 | API9 | 자산 관리 부실 | 잊힌 `/v0`, 테스트용 엔드포인트, 스테이징 서버가 운영 DB에 연결 | 엔드포인트 목록(OpenAPI)을 유지하고 안 쓰는 것은 제거 |
 | API10 | 외부 API 결과를 무조건 신뢰 | 외부 API·LLM 응답을 검증 없이 DB 저장·HTML 렌더·명령 실행 | 외부 응답도 스키마 검증, 타임아웃, LLM 출력은 **신뢰할 수 없는 사용자 입력**으로 취급 |
@@ -23,13 +23,13 @@
 | 브라우저 웹앱, 같은 사이트(프론트·API 같은 도메인 또는 하위 도메인) | **HttpOnly 쿠키 세션** | JS가 토큰을 못 읽으니 XSS로 토큰 탈취가 안 된다. Auth.js 기본 방식 |
 | 모바일 앱 | 액세스 토큰(짧게) + 리프레시 토큰(보안 저장소: Keychain/Keystore, Expo SecureStore) | 쿠키 관리가 불편하고 앱은 CSRF 대상이 아님 |
 | 서버 간 호출, 외부 개발자 | API 키(해시 저장, 앞 몇 글자만 표시) 또는 OAuth2 client credentials | 사용자 세션이 아님 |
-| Next.js(Auth.js) + FastAPI 분리 구성 | 신원 원본은 하나만 둔다. Next.js가 로그인을 맡고 FastAPI는 **서버 대 서버로 받은 짧은 수명의 서명 토큰을 검증만** 하거나, 브라우저가 같은 쿠키로 FastAPI를 부르게 같은 상위 도메인에 둔다 | 두 곳에서 각자 로그인을 구현하면 로그아웃·권한 변경이 어긋난다 [설계 시 `expert`에게 검토 요청] |
+| Next.js(Auth.js) + FastAPI 분리 구성 | 신원 원본은 하나만 둔다. 기본: Next.js가 로그인을 맡고, Next.js 서버가 FastAPI를 부를 때 **짧은 수명(1~5분)의 서명 토큰**(사용자 ID·역할·`aud`)을 붙이고 FastAPI는 검증만 한다. 브라우저가 FastAPI를 직접 부르게 하려면 **같은 origin**(Caddy 경로 분기)으로 묶어 쿠키가 전달되게 하고, FastAPI가 그 세션을 검증하는 방법(Auth.js 세션 쿠키는 기본이 암호화된 JWT라 그대로 못 읽음)을 따로 정한다 | 두 곳에서 각자 로그인을 구현하면 로그아웃·권한 변경이 어긋난다. 같은 상위 도메인의 다른 호스트는 쿠키 `Domain` 설정 없이 쿠키가 공유되지 않는다 [설계 시 `expert`에게 검토 요청] |
 
 - **브라우저에서 토큰을 `localStorage`에 두지 않는다.** XSS 한 번이면 전부 털린다. 쿠키는 `HttpOnly; Secure; SameSite=Lax`가 기본.
 - JWT의 약점은 **즉시 취소가 안 된다**는 것. 그래서 액세스 토큰은 5~15분, 리프레시 토큰은 회전(rotation: 쓸 때마다 새로 발급, 재사용 감지 시 전부 폐기) + 서버 저장. 강제 로그아웃·권한 박탈이 즉시 필요하면 DB 세션이 더 단순하다.
 - JWT 검증: 서명 알고리즘을 **고정**(`algorithms=["HS256"]` 또는 RS256 등)하고 `exp`·`iss`·`aud`를 검사한다. `alg: none`·알고리즘 혼동 공격은 알고리즘 미고정에서 나온다. 페이로드는 암호화가 아니라 **누구나 읽을 수 있다** — 민감 정보를 넣지 않는다.
-- FastAPI 공식 튜토리얼은 JWT에 PyJWT, 비밀번호 해시에 pwdlib(Argon2)를 쓴다(2026-10 확인. 예전 튜토리얼의 python-jose·passlib은 교체됨).
-- Auth.js는 2025-09부터 Better Auth 팀이 유지보수하며, 기존 프로젝트는 계속 쓰되 **신규 프로젝트에는 Better Auth를 권장**한다고 공지했다(2026-10 확인). 사용자 결정은 Auth.js이므로 기본은 유지하고, 새 출시 서비스를 시작할 때는 이 사실을 알리고 선택을 묻는다.
+- FastAPI 공식 튜토리얼은 JWT에 PyJWT, 비밀번호 해시에 pwdlib(Argon2)를 쓴다(fastapi.tiangolo.com `tutorial/security/oauth2-jwt`, 2026-10 확인. 예전 튜토리얼의 python-jose·passlib은 교체됨).
+- Auth.js는 2025-09부터 Better Auth 팀이 유지보수하며, 기존 프로젝트는 계속 쓰되 **신규 프로젝트에는 Better Auth를 권장**한다고 공지했다(better-auth.com 블로그 "Auth.js joins Better Auth", GitHub nextauthjs/next-auth 토론 #13252, 2026-10 확인). 사용자 결정은 Auth.js이므로 기본은 유지하고, 새 출시 서비스를 시작할 때는 이 사실을 알리고 선택을 묻는다.
 
 ## 3. 비밀번호를 직접 저장해야 할 때
 - 가능하면 소셜 로그인·매직 링크로 비밀번호 저장 자체를 피한다.
@@ -54,9 +54,9 @@
 
 ## 6. CORS와 CSRF: 헷갈리는 두 가지
 - **CORS는 보호 장치가 아니라 완화 장치다.** 다른 출처의 브라우저 JS가 응답을 *읽게* 허용하는 규칙일 뿐, 요청 자체를 막지 않는다. curl·서버는 CORS와 무관하다.
-- 같은 출처로 구성하면(리버스 프록시로 `/api`를 같은 도메인에) CORS 설정 자체가 필요 없다. 이게 가장 단순하다.
+- 같은 origin(스킴+호스트+포트가 같음)으로 구성하면(리버스 프록시로 `/api`를 같은 도메인에) CORS 설정 자체가 필요 없다. 이게 가장 단순하다. `app.example.com`과 `api.example.com`은 같은 사이트지만 다른 origin이라 CORS가 필요하다.
 - 필요하면 허용 출처를 정확한 목록으로. `allow_origins=["*"]`와 쿠키(credentials)는 함께 쓸 수 없고, 요청 `Origin`을 그대로 반사하는 설정은 `*`보다 나쁘다.
-- **CSRF는 쿠키로 인증할 때만 문제다.** `SameSite=Lax` 쿠키 + 상태 변경은 POST/PUT/PATCH/DELETE만 + 서버에서 `Origin` 헤더 검사(또는 CSRF 토큰). GET으로 상태를 바꾸면 SameSite=Lax가 못 막는다.
+- **CSRF는 브라우저가 자격증명을 자동으로 붙일 때 문제다**(쿠키가 대부분이고, HTTP Basic 인증·클라이언트 인증서도 해당). 쿠키 인증이면 `SameSite=Lax` 쿠키 + 상태 변경은 POST/PUT/PATCH/DELETE만 + 서버에서 `Origin` 헤더 검사(또는 CSRF 토큰). GET으로 상태를 바꾸면 SameSite=Lax가 못 막는다.
 - Next.js Server Actions는 POST만 받고 `Origin`과 `Host`를 비교하는 기본 보호가 있다. 리버스 프록시 뒤에서 Host가 바뀌면 `serverActions.allowedOrigins` 설정이 필요할 수 있다 [확인 필요: 사용하는 Next.js 버전 문서].
 - `Authorization: Bearer` 헤더 방식은 브라우저가 자동으로 붙이지 않으므로 CSRF 대상이 아니다(대신 토큰 저장 위치가 문제).
 
