@@ -27,7 +27,11 @@ DIR="$(cd "$1" 2>/dev/null && pwd)" || { echo "검사할 폴더가 없습니다:
 BRIEF="$2"; shift 2
 
 TYPES=""; RUN=0; WEB=0; EFFORT="high"; MODEL=""; LABEL="verify"; SAVE=1
+need() { [ -n "${2:-}" ] && [ "${2#-}" = "$2" ] || { echo "옵션 $1 에 값이 필요합니다." >&2; usage; }; }
 while [ $# -gt 0 ]; do
+  case "$1" in
+    -t|-e|-m|--label) need "$1" "${2:-}" ;;
+  esac
   case "$1" in
     -t) TYPES="$2"; shift 2 ;;
     --run) RUN=1; shift ;;
@@ -41,7 +45,15 @@ while [ $# -gt 0 ]; do
 done
 
 command -v codex >/dev/null || { echo "CODEX_UNAVAILABLE: codex CLI가 설치돼 있지 않습니다 (npm i -g @openai/codex)." >&2; exit 3; }
-if [ "$BRIEF" = "-" ]; then BRIEF_TEXT="$(cat)"; else BRIEF_TEXT="$(cat "$BRIEF")"; fi
+if [ "$BRIEF" = "-" ]; then
+  BRIEF_TEXT="$(cat)"
+else
+  [ -r "$BRIEF" ] || { echo "브리핑 파일을 읽을 수 없습니다: $BRIEF" >&2; exit 2; }
+  BRIEF_TEXT="$(cat "$BRIEF")"
+fi
+[ -n "$(printf '%s' "$BRIEF_TEXT" | tr -d '[:space:]')" ] || { echo "브리핑이 비어 있습니다. 검증 대상과 완료 기준을 적어 주세요." >&2; exit 2; }
+case "$EFFORT" in low|medium|high|xhigh) ;; *) echo "추론 강도는 low|medium|high|xhigh 중 하나: $EFFORT" >&2; exit 2 ;; esac
+LABEL="$(printf '%s' "$LABEL" | tr -c 'A-Za-z0-9가-힣._-' '-' )"
 
 TMP="$(mktemp -d -t codex-verify)"
 trap 'rm -rf "$TMP"' EXIT
@@ -76,7 +88,10 @@ trap 'rm -rf "$TMP"' EXIT
 if [ "$RUN" = 1 ]; then
   WORK="$TMP/work"
   # APFS에서는 복제(clone)라 빠르고 공간을 거의 쓰지 않는다. 실패하면 일반 복사.
-  cp -cR "$DIR" "$WORK" 2>/dev/null || cp -R "$DIR" "$WORK"
+  if ! cp -cR "$DIR" "$WORK" 2>/dev/null; then
+    rm -rf "$WORK"
+    cp -R "$DIR" "$WORK" || { echo "COPY_FAILED: 임시 복사본을 만들지 못했습니다." >&2; exit 5; }
+  fi
   SANDBOX="workspace-write"
 else
   WORK="$DIR"
@@ -86,7 +101,7 @@ fi
 ARGS=(-C "$WORK" -s "$SANDBOX" --skip-git-repo-check --ephemeral --color never
       -o "$TMP/report.md" -c "model_reasoning_effort=\"$EFFORT\"")
 [ -n "$MODEL" ] && ARGS+=(-m "$MODEL")
-[ "$WEB" = 1 ] && ARGS+=(-c 'web_search="live"')
+if [ "$WEB" = 1 ]; then ARGS+=(-c 'web_search="live"'); else ARGS+=(-c 'web_search="disabled"'); fi
 
 codex exec "${ARGS[@]}" - < "$TMP/prompt.md" > /dev/null 2> "$TMP/err.log"
 STATUS=$?
@@ -105,7 +120,9 @@ echo
 # 검증 기록 저장
 if [ "$SAVE" = 1 ]; then
   OUTDIR="$DIR/docs/verification"
-  if mkdir -p "$OUTDIR" 2>/dev/null; then
+  if ! mkdir -p "$OUTDIR" 2>/dev/null; then
+    echo "[검증 기록 저장 실패] 폴더를 만들 수 없습니다: $OUTDIR" >&2
+  else
     FILE="$OUTDIR/$(date +%Y%m%d-%H%M%S)_${LABEL// /-}.md"
     {
       echo "# 독립 검증 기록"
@@ -126,7 +143,6 @@ if [ "$SAVE" = 1 ]; then
       echo "## 오케스트레이터 처리 기록"
       echo
       echo "(Codex 지적을 수용/기각한 결과와 근거를 여기에 적는다)"
-    } > "$FILE"
-    echo "[검증 기록 저장] $FILE"
+    } > "$FILE" && echo "[검증 기록 저장] $FILE" || echo "[검증 기록 저장 실패] $FILE" >&2
   fi
 fi

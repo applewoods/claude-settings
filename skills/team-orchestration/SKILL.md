@@ -76,7 +76,7 @@ description: 팀 운영 매뉴얼. 디자인·개발·논문 작성·데이터 �
 
 ### 실행
 ```bash
-~/claude-settings/scripts/codex-verify.sh "<검사할 폴더>" <브리핑 파일 | -> -t <유형> [--run] [--web] [-e high|xhigh] [--label 이름]
+~/claude-settings/scripts/codex-verify.sh "<검사할 폴더>" <브리핑 파일 | -> -t <유형> [--run] [--web] [-e low|medium|high|xhigh] [-m 모델] [--label 이름] [--no-save]
 ```
 - Bash timeout 600000. 출력 첫 줄이 `[Codex 독립 검증 결과]`인지 확인한다. 다른 작업과 병렬로 돌릴 때만 `verifier` 에이전트에 맡기고, 그 보고에 이 표시가 없으면 검증된 것으로 보지 않는다.
 - `-t`: `paper`(논문) · `data`(분석·실험) · `dev`(개발) · `design`(디자인·화면) · `plan`(기획·문서). 여러 개는 쉼표로.
