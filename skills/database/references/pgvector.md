@@ -9,24 +9,28 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE documents (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, tenant_id bigint NOT NULL,
-                        title text NOT NULL, source_uri text, created_at timestamptz NOT NULL DEFAULT now());
+                        title text NOT NULL, source_uri text, created_at timestamptz NOT NULL DEFAULT now(),
+                        UNIQUE (tenant_id, id));   -- 자식의 복합 FK 대상
 
 CREATE TABLE chunks (
   id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  document_id bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  document_id bigint NOT NULL,
   tenant_id   bigint NOT NULL,             -- 필터용 중복 저장(조인 없이 거르기)
   chunk_index int    NOT NULL,
   content     text   NOT NULL,
   content_hash text  NOT NULL,             -- 같은 내용 재임베딩 방지
   embedding_model text NOT NULL,           -- 예: 'text-embedding-3-small'
   embedding   vector(1536) NOT NULL,
-  UNIQUE (document_id, chunk_index)
+  UNIQUE (document_id, chunk_index),
+  -- 복합 FK: 청크의 tenant_id가 부모 문서의 tenant_id와 다르면 DB가 거부한다
+  FOREIGN KEY (tenant_id, document_id) REFERENCES documents (tenant_id, id) ON DELETE CASCADE
 );
+-- 위 예시는 "청크당 임베딩 1개(모델 1개)" 구조다. 모델 교체·비교가 잦으면 아래 별도 테이블 구조를 쓴다.
 ```
 **판단 기준**
 - **모델 이름을 행마다 저장한다.** 모델이 다른 벡터끼리 비교하면 결과가 무의미한데 에러는 안 난다. 모델 교체 시 어떤 행이 옛 모델인지 알아야 한다.
 - 차원은 컬럼 타입에 고정(`vector(1536)`). 차원을 안 정하면 인덱스를 만들 수 없다.
-- 모델을 자주 바꾸거나 여러 모델을 동시에 비교(연구)한다면 임베딩을 별도 테이블로: `chunk_embeddings(chunk_id, model, embedding)`, 모델별 부분 인덱스 또는 모델별 테이블.
+- 모델을 자주 바꾸거나 여러 모델을 동시에 비교(연구)한다면 임베딩을 별도 테이블로: `chunk_embeddings(chunk_id, model, embedding, PRIMARY KEY (chunk_id, model))`, 모델별 부분 인덱스(차원이 다르면 모델별 테이블 또는 차원 미지정 컬럼 + 모델별 표현식 인덱스 [확인 필요]).
 - 벡터는 크다(1536차원 float4 ≈ 6KB/행). `SELECT *`로 목록을 가져오지 않는다. 원문·메타데이터 조회와 벡터 검색 쿼리를 분리.
 - 청크 원문과 출처(문서 ID, 페이지, 위치)를 함께 저장해야 답변 근거를 보여 줄 수 있다.
 - 원문 문서가 바뀌면 `content_hash`로 바뀐 청크만 재임베딩.
@@ -99,7 +103,7 @@ CREATE TABLE chunks (
 BEGIN; SET LOCAL enable_indexscan = off;  -- 정확 검색
 SELECT id FROM chunks ORDER BY embedding <=> $1 LIMIT 10;
 COMMIT;
--- 같은 쿼리를 인덱스로 실행해 recall@10 = |교집합| / 10 계산
+-- 같은 쿼리를 인덱스로 실행해 recall@k = |교집합| / |정확 결과 수| (필터로 정확 결과가 k보다 적을 수 있으므로 분모는 k가 아니라 정확 결과 수. 정확 결과 0개인 쿼리는 평가에서 제외하고 따로 센다)
 ```
 목표 재현율은 서비스가 정한다(RAG면 보통 0.9~0.95 이상을 목표로 잡는 경우가 많다 — 경험칙). 연구 논문에서 검색 성능을 보고한다면 근사 인덱스 사용 여부와 파라미터를 함께 적는다.
 
@@ -112,8 +116,17 @@ COMMIT;
 | 필터가 매우 선택적(전체의 소수, 후보 수천 개 이하) | 필터 컬럼 B-tree 인덱스 + **정확 검색**. 플래너가 필터 인덱스를 고르게 두면 결과가 정확하다 |
 | 필터 값 종류가 적음(카테고리 몇 개, 모델 이름) | 값별 **부분 인덱스**: `CREATE INDEX ... USING hnsw (embedding vector_cosine_ops) WHERE category = 'faq'` |
 | 필터 값 종류가 많음(tenant 수천 개) | tenant로 **파티셔닝**(파티션별 인덱스), 또는 아래 iterative scan |
-| 일반적인 경우(0.8.0+) | **iterative index scan**: `SET hnsw.iterative_scan = relaxed_order;` 결과가 모자라면 인덱스를 더 탐색. 상한 `hnsw.max_scan_tuples`(기본 20,000). `relaxed_order`는 재현율이 좋지만 순서가 약간 어긋날 수 있어 바깥 쿼리에서 다시 `ORDER BY distance` |
+| 일반적인 경우(0.8.0+) | **iterative index scan**: `SET hnsw.iterative_scan = relaxed_order;` 결과가 모자라면 인덱스를 더 탐색. 상한 `hnsw.max_scan_tuples`(기본 20,000). `relaxed_order`는 재현율이 좋지만 순서가 약간 어긋날 수 있다 → 아래 materialized CTE로 다시 정렬 |
 | 0.8.0 미만 | `ef_search`를 크게 올리거나 확장 업그레이드(`ALTER EXTENSION vector UPDATE`) |
+
+relaxed_order 결과를 엄격한 거리순으로 받기(README 패턴):
+```sql
+SET hnsw.iterative_scan = relaxed_order;   -- 트랜잭션 한정이면 SET LOCAL
+WITH relaxed AS MATERIALIZED (
+  SELECT id, embedding <=> $1 AS distance FROM chunks
+  WHERE tenant_id = $2 ORDER BY distance LIMIT 10
+) SELECT * FROM relaxed ORDER BY distance + 0;   -- '+ 0'은 PG17+에서 플래너가 재정렬을 생략하지 않게 하려는 것
+```
 
 다중 테넌트 RAG에서 **tenant 필터 누락 = 다른 고객 문서 유출**이다. 벡터 쿼리에도 RLS 또는 강제된 tenant 조건을 적용한다(`security-privacy.md`).
 
@@ -125,7 +138,7 @@ COMMIT;
 
 ## 8. 모델 교체·재색인
 
-1. 새 컬럼(`embedding_v2 vector(새 차원)`) 또는 새 행(`embedding_model`이 다른 행)을 추가 — 기존 검색은 계속 동작(expand).
+1. 새 컬럼(`embedding_v2 vector(새 차원)`, 1절의 청크당 1임베딩 구조) 또는 별도 임베딩 테이블에 새 모델 행(`(chunk_id, model)` PK 구조)을 추가 — 기존 검색은 계속 동작(expand). 1절 예시 테이블에 같은 청크를 모델만 바꿔 다시 넣으면 `(document_id, chunk_index)` unique에 막힌다.
 2. 배치로 재임베딩(API 비용·속도 제한 고려, 진행 지점 기록, 실패 재시도).
 3. 새 인덱스를 `CONCURRENTLY`로 생성.
 4. 샘플 쿼리로 재현율·검색 품질 비교 후 쿼리 전환.
