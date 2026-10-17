@@ -44,6 +44,8 @@ export async function updateProfile(prev: State, formData: FormData): Promise<St
 | 웹 + Server Action | `useOptimistic` — 액션이 끝나면 자동으로 실제 값으로 돌아간다 |
 | TanStack Query | `onMutate`에서 `cancelQueries` → 이전 값 저장 → `setQueryData`, `onError`에서 복원, `onSettled`에서 `invalidateQueries` |
 
+- **같은 데이터를 바꾸는 요청이 겹칠 때 스냅샷 복원은 위험하다.** A·B를 연달아 보내고 B는 성공, A가 늦게 실패하면 A의 "이전 값" 복원이 B의 변경까지 지운다. 대책: (1) 실패 시 스냅샷 복원 대신 `invalidateQueries`로 서버 값을 다시 받기, (2) 같은 리소스 변경은 직렬화(TanStack Query `scope`로 같은 scope의 mutation을 순서대로 실행 [버전 확인 필요]) 또는 진행 중엔 버튼 비활성화, (3) 항목별 변경이면 전체 목록이 아니라 그 항목만 되돌리기. 출시 서비스면 "성공·실패 순서가 뒤집히는" 경우를 테스트한다.
+
 흔한 실수: 실패 시 롤백만 하고 사용자에게 알리지 않음 → 토스트로 "저장하지 못했습니다, 다시 시도" 표시. `cancelQueries`를 빼먹어 진행 중이던 재조회가 낙관적 값을 덮어씀.
 
 ## 5. 에러 경계

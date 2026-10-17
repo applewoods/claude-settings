@@ -12,7 +12,7 @@
 | 목록 화면에 `comment_count`를 매번 `COUNT(*)` | 행이 수만 건 이하면 그냥 COUNT + 인덱스. 느린 게 측정되면 카운터 컬럼 + 같은 트랜잭션에서 갱신(`SET n = n + 1`) |
 | 주문 당시 가격·주소 | **비정규화가 정답.** 이건 중복이 아니라 "그 시점의 사실"(스냅샷)이다. `orders.shipping_address`처럼 복사해 둔다 |
 | 리포트·대시보드 집계 | 원본 테이블에 컬럼을 추가하지 말고 materialized view(`REFRESH MATERIALIZED VIEW CONCURRENTLY`는 unique index 필요) 또는 별도 집계 테이블 |
-| 검색용 파생값(소문자 이메일, tsvector) | generated column. PG18부터 기본이 VIRTUAL(조회 시 계산)이고 인덱스를 걸려면 `STORED`로 명시 [확인 필요: PG18에서 virtual 컬럼 인덱스 불가 여부] |
+| 검색용 파생값(소문자 이메일, tsvector) | generated column. PG18부터 기본이 VIRTUAL(조회 시 계산). 검색용이면 `STORED`로 명시하거나 원본 식에 표현식 인덱스를 건다(virtual 컬럼 자체에는 인덱스를 못 거는 것으로 알려짐 [확인 필요: PG18 CREATE INDEX 문서]) |
 
 흔한 실수: "조인이 느리다"는 추측으로 처음부터 비정규화. PostgreSQL은 인덱스가 맞으면 수백만 행 조인도 ms 단위다. 느린 원인의 대부분은 조인이 아니라 인덱스 누락·N+1이다(`indexing-and-queries.md`).
 
