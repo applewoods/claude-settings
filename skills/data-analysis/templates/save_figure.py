@@ -40,9 +40,9 @@ if __name__ == "__main__":
     for i, name in enumerate(["baseline", "proposed"]):
         mean = 0.6 + 0.02 * x * (i + 1) ** 0.5
         ax.plot(x, mean, label=name, **style(i))
-        ax.fill_between(x, mean - 0.02, mean + 0.02, color=OKABE_ITO[i], alpha=0.2)
+        ax.fill_between(x, mean - 0.02, mean + 0.02, color=OKABE_ITO[i], alpha=0.2)  # 데모용 임의 폭(실제로는 계산한 CI)
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Validation F1")
-    ax.legend(title="Shaded: 95% CI")
+    ax.legend(title="Demo (band is illustrative)")
     save_figure(fig, "figures/demo")
     print("saved figures/demo.pdf, figures/demo.png")

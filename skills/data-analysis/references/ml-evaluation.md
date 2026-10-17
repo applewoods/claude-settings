@@ -41,7 +41,7 @@
 ## 5. 지표 선택
 **분류**
 - 불균형이면 accuracy 단독 금지. 다수 클래스만 찍어도 높게 나온다.
-- **PR-AUC(average precision)**: 양성이 드물 때 ROC-AUC보다 정보가 많다. 무작위 기준선은 양성 비율이다(0.5가 아님, Saito & Rehmsmeier 2015). `average_precision_score`.
+- **AP(average precision, `average_precision_score`)**: 양성이 드물 때 ROC-AUC보다 정보가 많다. 무작위 기준선은 양성 비율이다(0.5가 아님, Saito & Rehmsmeier 2015). PR 곡선 아래 면적을 사다리꼴로 적분한 값(`auc(recall, precision)`)과는 값이 다르다(사다리꼴은 낙관적일 수 있다) → 논문에는 "AP"로 쓰고 계산 함수를 밝힌다. 다른 논문의 "PR-AUC"와 비교할 때 같은 정의인지 확인한다.
 - ROC-AUC: 순위 품질. 불균형에서도 쓸 수 있지만 낙관적으로 보일 수 있어 PR-AUC와 함께.
 - 임계값 의존 지표(F1, precision, recall): **임계값을 val에서 정한다**(`TunedThresholdClassifierCV` 또는 직접). test에서 최적 임계값을 고르면 누수.
 - balanced accuracy, MCC(`matthews_corrcoef`): 불균형에 덜 민감한 단일 요약.
@@ -63,7 +63,7 @@
 ## 6. 애블레이션
 - 주장하는 구성 요소마다 "그것만 뺀(또는 단순 대체한)" 버전을 **같은 시드·같은 분할·같은 튜닝 예산**으로 돌린다.
 - 구성 요소가 상호작용하면 하나씩 빼기만으로는 부족하다 → 하나씩 더하기도 함께 보거나 상호작용을 언급한다.
-- 애블레이션 차이도 시드 분산과 비교한다(`model-comparison.md`). 차이가 시드 SD보다 작으면 "기여한다"고 쓰지 않는다.
+- 애블레이션 차이도 쌍체 차이의 CI로 판단한다(`model-comparison.md`). CI가 0을 포함하거나 미리 정한 최소 의미 있는 차이보다 작으면 "기여한다"고 쓰지 않는다.
 - 파라미터 수가 늘어서 좋아진 것인지 구분하려면 파라미터 수를 맞춘 대조군을 둔다.
 
 ## 7. 오류 분석

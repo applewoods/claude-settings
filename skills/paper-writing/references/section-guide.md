@@ -48,7 +48,7 @@
 - 분석 방법 자체(통계 검정 선택, 누수 점검 등)는 `data-analysis` 스킬을 따른다.
 
 ## 결과
-- **관찰만 쓴다.** "Table 2 shows X outperforms Y by 3.1 points on A (mean over 5 seeds, ±0.4)." 해석("this is because…")은 논의로 보낸다. 짧은 해석이 꼭 필요하면 관찰과 문장을 분리하고 추측임을 표시("We hypothesize…").
+- **관찰만 쓴다.** "Table 2 shows X outperforms Y by 3.1 points on A (mean ± std over 5 seeds; paired test p < 0.01)." 우열 표현은 차이의 검정·신뢰구간이 뒷받침할 때만. 해석("this is because…")은 논의로 보낸다. 짧은 해석이 꼭 필요하면 관찰과 문장을 분리하고 추측임을 표시("We hypothesize…").
 - 순서: 핵심 주장(C1) 근거 → 나머지 주장 → ablation → 추가 분석. 각 하위절 첫 문장은 그 절이 답하는 질문.
 - 모든 표·그림은 본문에서 한 번 이상 언급하고, 무엇을 봐야 하는지 말한다.
 - 불리한 결과(우리 방법이 지는 데이터셋)도 보고하고 논의에서 다룬다. 숨기면 리뷰어가 찾아낸다.

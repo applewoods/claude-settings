@@ -1,4 +1,4 @@
-"""실험 기록 폴더 만들기: results/<YYYYMMDD-HHMMSS>_<name>/ 에 config·meta·환경 저장.
+"""실험 기록 폴더 만들기: results/<YYYYMMDD-HHMMSS>_<name>/ 에 config·meta·환경·코드 사본 저장.
 
 사용:
     run_dir = make_run_dir("baseline_lr", cfg)       # 실행 시작 시
@@ -41,12 +41,22 @@ def make_run_dir(name: str, cfg: dict, root: str = "results") -> Path:
         "command": " ".join(sys.argv),
         "started": datetime.now().isoformat(timespec="seconds"),
         "git_commit": git_commit,
-        "git_dirty": git_dirty,  # 추적 중인 파일에 커밋 안 된 변경이 있으면 True
+        "git_dirty": git_dirty,  # 추적 중인 파일에 커밋 안 된 변경이 있으면 True(미추적 파일은 code/untracked.txt)
         "python": sys.version.split()[0],
         "host": platform.node(),
         "seed": cfg.get("seed"),
     }
     (run_dir / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
+    # 커밋 해시만으로는 커밋 안 된 코드를 복원할 수 없다 → 실행 스크립트 사본, diff, 미추적 파일 목록 저장
+    code_dir = run_dir / "code"
+    code_dir.mkdir()
+    script = Path(sys.argv[0])
+    if script.is_file():
+        shutil.copy2(script, code_dir / script.name)
+    if _run(["git", "rev-parse", "--is-inside-work-tree"]) == "true":
+        (code_dir / "untracked.txt").write_text(_run(["git", "ls-files", "--others", "--exclude-standard"]))
+        diff = _run(["git", "diff", "HEAD"]) if git_commit else "# 커밋이 없어 diff를 만들 수 없음 — 코드는 위 사본·untracked.txt 참고\n"
+        (code_dir / "git.diff").write_text(diff)
     if shutil.which("conda"):
         (run_dir / "environment.yml").write_text(_run(["conda", "env", "export", "--no-builds"]))
     else:

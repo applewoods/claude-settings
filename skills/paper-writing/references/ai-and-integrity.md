@@ -15,11 +15,11 @@
 ### 확인한 정책 요약
 | 투고처 | 고지 위치·범위 (요약) | 출처 |
 |---|---|---|
-| ACL (ACL Anthology 계열 학회) | 언어 다듬기(자기 글 paraphrase·polish)와 문법 검사는 허용. 내용 생성·아이디어 제안 등은 Acknowledgements 절에 고지(예: 어느 절이 어떤 도구 입력으로 쓰였는지). rebuttal 작성도 대상. 숨겨진 프롬프트 삽입 금지. 리뷰어는 원고를 비공개 보장 없는 도구에 올릴 수 없음 | ACL Policy on Publication Ethics (aclweb.org adminwiki) |
-| NeurIPS 2025 | LLM 사용 자체는 허용. 방법론에 중요한·비표준적 LLM 사용은 논문에 기술. 글쓰기·편집·서식만이면 원고 고지 불필요(대신 별도 설문 보고). 리뷰어는 제출물을 LLM에 공유 금지 | neurips.cc/Conferences/2025/LLM |
-| ICLR 2026 | 광범위한 LLM 사용을 고지하지 않으면 desk reject 대상으로 공지. 환각(존재하지 않는) 참고문헌이 확인된 논문은 desk reject됨 | blog.iclr.cc (2025-11-19, 2026-03-31 회고) |
-| Elsevier 저널 | 원고 끝(참고문헌 바로 앞)에 별도 AI 선언문. 연구 과정의 AI 사용(분석·코드)은 Methods에. 철자·문법 기본 검사 등은 면제. 설명용 도식은 캡션과 선언문에 고지, 데이터 시각화는 재현 가능한 방법일 때만, 1차 연구 이미지 생성·변형 금지 | elsevier.com Generative AI policies for journals |
-| IEEE | AI 생성 내용(텍스트·그림·이미지·코드)은 Acknowledgments에 도구명·해당 절·사용 범위 고지. 편집·문법 수준은 일반적으로 대상 밖이나 고지 권장. 학회·저널별 문구 차이 있음 | open.ieee.org Author Guidelines for AI-Generated Text |
+| ACL (ACL Anthology 계열 학회) | 언어 다듬기(자기 글 paraphrase·polish)와 문법 검사는 허용. 내용 생성·아이디어 제안 등은 Acknowledgements 절에 고지(예: 어느 절이 어떤 도구 입력으로 쓰였는지). rebuttal 작성도 대상. 숨겨진 프롬프트 삽입 금지. 리뷰어는 원고를 비공개 보장 없는 도구에 올릴 수 없음 | https://www.aclweb.org/adminwiki/index.php/ACL_Policy_on_Publication_Ethics |
+| NeurIPS 2025 | LLM 사용 자체는 허용. 방법론에 중요한·비표준적 LLM 사용은 논문에 기술. 글쓰기·편집·서식만이면 원고 고지 불필요(대신 별도 설문 보고). 리뷰어는 제출물을 LLM에 공유 금지 | https://neurips.cc/Conferences/2025/LLM |
+| ICLR 2026 | 광범위한 LLM 사용을 고지하지 않으면 desk reject 대상으로 공지. 환각(존재하지 않는) 참고문헌이 확인된 논문은 desk reject됨 | https://blog.iclr.cc/2025/11/19/iclr-2026-response-to-llm-generated-papers-and-reviews/ , https://blog.iclr.cc/2026/03/31/a-retrospective-on-the-iclr-2026-review-process/ |
+| Elsevier 저널 | 원고 끝(참고문헌 바로 앞)에 별도 AI 선언문. 연구 과정의 AI 사용(분석·코드)은 Methods에. 철자·문법 기본 검사 등은 면제. 이미지는 범주별로 다름: 설명용 도식은 허용(캡션·선언문에 도구 고지), 데이터 시각화는 데이터에서 재현 가능한 방법일 때만(Methods에 고지), 1차 연구 이미지(현미경·영상의학 등)의 AI 생성·변형 금지 — 단 AI가 정식 연구 방법의 일부(예: 영상 분석 모델)이면 Methods에 재현 가능하게 기술하는 조건으로 별도 취급, 그래픽 초록은 범용 생성형 AI 사용 금지, 표지 이미지는 사전 허락 필요 | https://www.elsevier.com/about/policies-and-standards/generative-ai-policies-for-journals |
+| IEEE | AI 생성 내용(텍스트·그림·이미지·코드)은 Acknowledgments에 도구명·해당 절·사용 범위 고지. 편집·문법 수준은 일반적으로 대상 밖이나 고지 권장. 학회·저널별 문구 차이 있음 | https://open.ieee.org/author-guidelines-for-artificial-intelligence-ai-generated-text/ |
 | Springer Nature, ACM, 국내 학회(정보과학회 등) | 이번에 세부 문구 확인 못 함 `[확인 필요]` | — |
 
 ### 고지 문안 초안 (투고처 정책에 맞춰 조정)
@@ -38,7 +38,8 @@
 - 위조: 존재하지 않는 데이터·결과를 만들어 냄. 변조: 연구 과정·데이터를 임의로 조작·변형·삭제해 결과를 왜곡.
 - 표절: 타인의 문장뿐 아니라 **아이디어·가설·이론·연구결과**를 적절한 출처 표시 없이 사용.
 - 부당한 저자 표시: 기여한 사람을 빼거나 기여 없는 사람을 예우로 넣음.
-- 부당한 중복게재: 자신의 이전 연구물(출간·게재 예정·심사 중 포함)과 동일하거나 실질적으로 유사한 것을 출처 없이 다시 게재.
+- 부당한 중복게재: 자신의 이전 연구물과 동일하거나 실질적으로 유사한 연구물을 출처 표시 없이 게재하여 **연구비 수령이나 별도의 연구업적 인정 등 부당한 이익을 얻는 행위**(교육부 지침 제11조 — 현행 훈령 조문은 국가법령정보센터 원문 확인 `[확인 필요]`).
+  - 주의: 이 "부당한 이익" 요건은 교육부 지침상 판정 기준이다. 투고처·출판사의 중복출판(duplicate publication) 규정은 이익 여부와 무관하게 더 엄격할 수 있으므로, 이 요건을 이유로 재게재가 허용된다고 보지 않는다.
 
 **판단 기준 (작업 중 적용)**
 - 다른 논문 문장을 가져오면: 직접 인용(따옴표+출처)하거나, 실제로 다시 쓰고 출처를 단다. 단어만 바꾼 패러프레이즈(patchwriting)는 표절로 판정될 수 있다.

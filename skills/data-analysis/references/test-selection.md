@@ -16,8 +16,8 @@
 |---|---|---|---|---|
 | 두 독립 집단 | 연속 | **Welch t-검정** | 심한 치우침·이상치: Mann–Whitney U 또는 부트스트랩 CI(평균 차) | `scipy.stats.ttest_ind(a, b, equal_var=False)`, `mannwhitneyu` |
 | 두 독립 집단 | 순서 | Mann–Whitney U | 분산이 다르면 U 검정은 "중앙값 비교"가 아님 → Brunner–Munzel | `mannwhitneyu`, `brunnermunzel` |
-| 대응 두 조건 | 연속 | 대응 t-검정 | 차이가 심하게 치우침: Wilcoxon 부호순위 | `ttest_rel`, `wilcoxon` |
-| 3개 이상 독립 집단 | 연속 | Welch ANOVA 또는 일원 ANOVA | 순위 기반: Kruskal–Wallis. 사후: Games–Howell(이분산), Tukey HSD(등분산) | `f_oneway`, `kruskal`, `scipy.stats.tukey_hsd` |
+| 대응 두 조건 | 연속 | 대응 t-검정(추정 대상 = 평균 차이) | Wilcoxon 부호순위와 부호 뒤집기 순열 검정은 둘 다 귀무가설에서 차이 분포가 0에 대해 **대칭**이라고 가정한다 → 차이가 치우쳤으면 평균 차이 검정의 대체가 아니다(검정 대상이 바뀜). 치우친 차이의 평균이 질문이면 n이 충분할 때 t-검정 + 부트스트랩 CI(작은 n에서는 부트스트랩도 부정확 — 한계로 적음), 중앙값·확률적 우위가 질문이면 그 추정 대상에 맞는 방법(부호 검정 등)을 고른다 | `ttest_rel`, `wilcoxon`, `binomtest`(부호 검정) |
+| 3개 이상 독립 집단 | 연속 | Welch ANOVA 또는 일원 ANOVA | 순위 기반: Kruskal–Wallis. 사후: Games–Howell(이분산), Tukey HSD(등분산) | `f_oneway(..., equal_var=False)`(Welch, 기본값은 True), `kruskal`, `tukey_hsd(..., equal_var=False)`(Games–Howell) |
 | 3개 이상 반복 조건 | 연속 | 혼합효과 모형(권장) 또는 반복측정 ANOVA | 구형성 위반 시 Greenhouse–Geisser 보정. 순위: Friedman | `statsmodels` `AnovaRM`, `friedmanchisquare` |
 | 2요인 이상 | 연속 | 요인 ANOVA = 선형 모형 | 불균형 설계면 제곱합 유형(II/III)을 밝힌다 | `smf.ols` + `sm.stats.anova_lm(typ=2)` |
 | 두 범주 변수 연관 | 범주 | 카이제곱 독립성 검정 | 기대빈도 < 5 칸이 많으면 Fisher 정확 검정(2×2) | `chi2_contingency`, `fisher_exact` |
@@ -27,6 +27,8 @@
 | 결과 예측·통제 | 이진 | 로지스틱 회귀 | 완전 분리 시 패널티(Firth 등) | `smf.logit` |
 | 결과 예측·통제 | 횟수 | 포아송 회귀 | 과산포면 음이항, 0 과다면 영과잉 모형 | `smf.poisson`, `smf.negativebinomial` |
 | 시간-사건 | 생존 | Kaplan–Meier + 로그순위, Cox 회귀 | 비례위험 가정 확인 | `lifelines` [설치 필요] |
+
+**먼저 추정 대상(평균·중앙값·확률적 우위 P(X>Y)·분포 전체)을 정한다.** 비모수 검정은 "가정 없는 t-검정"이 아니라 다른 질문에 답하는 경우가 많다(Mann–Whitney는 확률적 우위, Wilcoxon 부호순위는 대칭 중심).
 
 분포 가정을 피하고 싶으면 **순열 검정**(`scipy.stats.permutation_test`)과 **부트스트랩 CI**(`scipy.stats.bootstrap`)가 범용 대안이다. 단, 교환 가능성(exchangeability)이 성립하는 단위로 섞어야 한다(군집 데이터는 군집 단위로).
 

@@ -6,7 +6,8 @@
 ```
 results/<YYYYMMDD-HHMMSS>_<실험명>/
   config.yaml        # 실제로 쓴 설정(기본값 포함, 명령줄 덮어쓰기 반영)
-  meta.json          # git 커밋 해시·dirty 여부, 실행 명령, 시작·종료 시각, 호스트, 시드
+  meta.json          # git 커밋 해시·dirty 여부, 실행 명령, 시작·종료 시각, 호스트, 시드, 상태
+  code/              # 실행한 스크립트 사본 + 커밋 안 된 변경(git.diff) + 미추적 파일 목록
   environment.yml    # conda env export (또는 pip freeze)
   metrics.csv        # 시드·fold별 원 점수(집계 전)
   log.txt
@@ -14,7 +15,8 @@ results/<YYYYMMDD-HHMMSS>_<실험명>/
 ```
 - **집계 전 원 점수**를 저장한다. 평균만 남기면 나중에 쌍체 비교·CI를 못 한다.
 - 실패·중단된 실행 폴더도 지우지 않고 남긴다(이유를 meta에 기록).
-- git 작업 트리가 dirty(커밋 안 된 변경)이면 meta에 표시한다.
+- git 작업 트리가 dirty(커밋 안 된 변경)이면 meta에 표시하고 diff와 실행 스크립트 사본을 남긴다. 커밋 해시만으로는 커밋 안 된 코드를 복원할 수 없다.
+- 집계 시 예상한 시드×fold 실행이 모두 있는지, 중복·NaN이 없는지 확인하고, 빠진 실행은 제외 이유와 함께 보고한다(`aggregate_results.py`가 경고).
 - 환경 고정: `conda env export --no-builds > environment.yml`(다른 OS 재현용), 완전 고정은 `conda list --explicit`. 패키지 이름·버전을 논문 부록에 쓴다.
 - MLflow·W&B 같은 추적 도구는 사용자가 원할 때만. 기본은 위 폴더 구조.
 

@@ -4,13 +4,22 @@
   일반 쌍체 t-검정은 fold들이 학습 데이터를 공유해 너무 낙관적이다.
 - paired_bootstrap_ci: 고정 test 세트에서 샘플 단위 예측으로 지표 차이의 CI.
 """
+import warnings
+
 import numpy as np
 from scipy import stats
 
 
 def corrected_resampled_ttest(a, b, n_train: int, n_test: int, alpha: float = 0.05):
     """a, b: 같은 순서의 (seed, fold)별 점수 J개. 반환: 평균 차, CI, t, p(양측)."""
-    d = np.asarray(a, float) - np.asarray(b, float)
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    if a.ndim != 1 or a.shape != b.shape:  # (5,)와 (5,1)이 브로드캐스팅돼 25쌍이 되는 사고 방지
+        raise ValueError(f"a, b는 같은 길이의 1차원이어야 한다: {a.shape} vs {b.shape}")
+    if a.size < 2 or not np.all(np.isfinite(a)) or not np.all(np.isfinite(b)):
+        raise ValueError("유한한 점수가 2쌍 이상 필요하다")
+    if n_train <= 0 or n_test <= 0:
+        raise ValueError("n_train, n_test는 양수(fold 하나의 학습·평가 샘플 수)")
+    d = a - b
     J = d.size
     var = d.var(ddof=1) * (1 / J + n_test / n_train)
     if var == 0:
@@ -22,17 +31,32 @@ def corrected_resampled_ttest(a, b, n_train: int, n_test: int, alpha: float = 0.
 
 
 def paired_bootstrap_ci(y_true, pred_a, pred_b, metric, n_boot: int = 2000, seed: int = 0, alpha: float = 0.05):
-    """같은 test 샘플을 재추출해 metric(A) - metric(B)의 백분위 CI. 그룹이 있으면 그룹 단위로 재추출해야 한다."""
+    """같은 test 샘플을 재추출해 metric(A) - metric(B)의 백분위 CI. 샘플 = 첫 번째 축.
+    그룹(피험자 등)이 있으면 그룹 단위로 재추출해야 한다(이 함수는 샘플 단위).
+    재표본에서 지표가 정의되지 않으면(AUC인데 한 클래스만 뽑힘 → NaN·오류) 그 재표본은 버리고 개수를 반환한다.
+    버린 비율이 크면(양성이 매우 적음) 이 CI는 믿을 수 없다 → 오류로 멈춘다."""
     rng = np.random.default_rng(seed)
     y_true, pred_a, pred_b = map(np.asarray, (y_true, pred_a, pred_b))
-    n = y_true.size
-    diffs = np.empty(n_boot)
-    for i in range(n_boot):
+    n = len(y_true)
+    if len(pred_a) != n or len(pred_b) != n:
+        raise ValueError("y_true, pred_a, pred_b의 샘플 수가 다르다")
+    diffs = []
+    for _ in range(n_boot):
         idx = rng.integers(0, n, n)
-        diffs[i] = metric(y_true[idx], pred_a[idx]) - metric(y_true[idx], pred_b[idx])
+        try:
+            with warnings.catch_warnings():  # 정의 안 되는 재표본의 경고는 skipped 수로 대신 보고
+                warnings.simplefilter("ignore")
+                d = metric(y_true[idx], pred_a[idx]) - metric(y_true[idx], pred_b[idx])
+        except ValueError:
+            continue
+        if np.isfinite(d):
+            diffs.append(d)
+    skipped = n_boot - len(diffs)
+    if skipped > 0.05 * n_boot:
+        raise ValueError(f"재표본 {skipped}/{n_boot}개에서 지표가 정의되지 않음 — 표본·양성 수가 너무 적다")
     obs = metric(y_true, pred_a) - metric(y_true, pred_b)
     lo, hi = np.quantile(diffs, [alpha / 2, 1 - alpha / 2])
-    return {"diff": obs, "ci": (lo, hi)}
+    return {"diff": obs, "ci": (lo, hi), "n_valid": len(diffs), "skipped": skipped}
 
 
 if __name__ == "__main__":
