@@ -9,8 +9,8 @@
 ## 빠른 설치
 
 ```bash
-git clone https://github.com/applewoods/cluade-settings.git ~/cluade-settings
-cd ~/cluade-settings
+git clone https://github.com/applewoods/claude-settings.git ~/claude-settings
+cd ~/claude-settings
 ./install.sh
 ```
 
@@ -30,7 +30,7 @@ cd ~/cluade-settings
 
 이 README를 읽고 사용자의 컴퓨터에 설정을 적용하는 AI는 아래 순서를 따르세요.
 
-1. **저장소 위치 확인**: `~/cluade-settings`가 있으면 `git -C ~/cluade-settings pull`, 없으면 위 "빠른 설치"의 `git clone`을 실행한다.
+1. **저장소 위치 확인**: `~/claude-settings`가 있으면 `git -C ~/claude-settings pull`, 없으면 위 "빠른 설치"의 `git clone`을 실행한다.
 2. **기존 설정 확인**: `~/.claude/CLAUDE.md`와 `~/.claude/skills/`에 이 저장소와 이름이 같은 항목이 있는지 본다. 있으면 사용자에게 알린다. `install.sh`가 기존 항목을 `~/.claude/backups/install-<시각>/`으로 옮기고(삭제하지 않음) 링크를 건다.
 3. **설치 실행**: `./install.sh`를 실행한다. macOS·Linux는 그대로, Windows는 아래 "Windows" 절을 따른다.
 4. **검증**:
@@ -56,7 +56,7 @@ Get-ChildItem .\skills -Directory | ForEach-Object { Copy-Item $_.FullName "$cla
 ## 구성
 
 ```
-cluade-settings/
+claude-settings/
 ├── CLAUDE.md          # 전역 지침 → ~/.claude/CLAUDE.md (모든 세션에서 항상 읽힘)
 ├── install.sh         # ~/.claude 에 심볼릭 링크 연결 + 자동 동기화 hook 등록
 ├── scripts/sync.sh    # 자동 동기화(pull / push), hook이 호출
@@ -99,18 +99,18 @@ cluade-settings/
 - 링크 방식이라 `~/.claude/CLAUDE.md`나 `~/.claude/skills/<이름>/`을 고치면 곧 이 저장소의 파일을 고치는 것입니다.
 - **새 스킬 자동 편입:** `~/.claude/skills/`에 링크가 아닌 새 스킬 폴더(`SKILL.md` 있음)가 생기면, push 단계에서 저장소 `skills/`로 옮기고 링크로 바꾼 뒤 함께 올립니다. `synced/`(앱이 관리)는 건드리지 않습니다.
 - 두 컴퓨터에서 동시에 바꿨으면 `pull --rebase` 후 다시 푸시합니다. 충돌이 나면 멈추고 `.sync.log`에 남기니 수동으로 해결하세요.
-- 기록: `~/cluade-settings/.sync.log` (git에는 올라가지 않음)
+- 기록: `~/claude-settings/.sync.log` (git에는 올라가지 않음)
 - 끄기: `~/.claude/settings.json`의 `hooks`에서 `sync.sh`가 들어간 두 항목을 지웁니다.
-- Claude 밖에서(에디터로 직접) 고친 내용은 다음 Claude 턴이 끝날 때 함께 올라갑니다. 바로 올리려면 `~/cluade-settings/scripts/sync.sh push`를 실행하세요.
+- Claude 밖에서(에디터로 직접) 고친 내용은 다음 Claude 턴이 끝날 때 함께 올라갑니다. 바로 올리려면 `~/claude-settings/scripts/sync.sh push`를 실행하세요.
 
 ### 수동으로 할 때
 
 ```bash
-cd ~/cluade-settings && git add -A && git commit -m "스킬 수정: ..." && git push
+cd ~/claude-settings && git add -A && git commit -m "스킬 수정: ..." && git push
 ```
 
 ```bash
-cd ~/cluade-settings && git pull
+cd ~/claude-settings && git pull
 ```
 
 - **새 스킬을 추가하면** 자동 편입되지만, 직접 `skills/<이름>/SKILL.md`를 만들었다면 `./install.sh`를 다시 실행해 링크를 겁니다.
