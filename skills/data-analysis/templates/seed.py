@@ -25,7 +25,8 @@ def set_seed(seed: int, deterministic: bool = False) -> None:
 
 
 def seed_worker(worker_id: int) -> None:
-    """DataLoader(worker_init_fn=seed_worker, generator=g)용. g = torch.Generator().manual_seed(seed)"""
+    """DataLoader(worker_init_fn=seed_worker, generator=g)용. g = torch.Generator().manual_seed(seed)
+    macOS·Windows에서 num_workers>0이면 실행 코드를 `if __name__ == "__main__":` 안에 둬야 한다(spawn 방식)."""
     import torch
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)

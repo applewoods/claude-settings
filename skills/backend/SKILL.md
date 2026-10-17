@@ -42,7 +42,7 @@ DB 스키마·마이그레이션·쿼리·백업 세부는 `database` 스킬, �
 - 자체 서버 배포가 기본이라 외부 인증 서비스를 쓸지는 비용·운영 부담을 비교해 제안한다.
 
 ## 기본 규칙 (모든 단계)
-- **비밀값은 `.env`로.** API 키·DB 비밀번호·토큰을 코드에 넣지 않는다. `.env`는 `.gitignore`·`.dockerignore`에 넣고, 필요한 키 목록은 `.env.example`에 값 없이 적는다. 한 번 푸시된 키는 유출로 보고 교체한다.
+- **비밀값은 `.env`로.** API 키·DB 비밀번호·토큰을 코드에 넣지 않는다. `.env`·`.env.*`는 `.gitignore`·`.dockerignore`에 넣고(`.env.example`만 예외), 필요한 키 목록은 `.env.example`에 값 없이 적는다. 한 번 푸시된 키는 유출로 보고 교체한다.
 - **입력 검증·권한 확인.** 모든 API(Server Action 포함)에서 입력을 스키마(FastAPI는 Pydantic, TS는 Zod)로 검증하고, 요청한 사용자가 그 데이터에 접근할 권한이 있는지 확인한다.
 - **테스트 작성.** 핵심 API는 테스트와 함께 만든다(FastAPI: pytest, TS: Vitest). 권한 없는 접근이 막히는지도 테스트한다.
 - **API 문서.** FastAPI는 자동 OpenAPI 문서(`/docs`)를 유지한다. Next.js는 `docs/api.md`에 엔드포인트·입출력을 정리한다.

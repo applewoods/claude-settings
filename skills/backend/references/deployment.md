@@ -8,7 +8,7 @@
 - 베이스 이미지 태그를 고정한다(`python:3.12-slim` ✓, `latest` ✕). 출시 서비스는 다이제스트(`@sha256:...`)까지 고정하고 정기적으로 올린다.
 - **루트로 실행하지 않는다**: `USER app`(또는 node 이미지의 `node`). 컨테이너 탈출 시 피해를 줄인다.
 - 의존성 파일을 먼저 복사·설치하고 소스는 나중에 복사한다(레이어 캐시). 락 파일(`uv.lock`, `package-lock.json`/`pnpm-lock.yaml`)로 설치해 재현성을 보장한다.
-- `.dockerignore`에 `.env`, `.git`, `node_modules`, `__pycache__`, 데이터·모델 파일을 넣는다. 안 넣으면 비밀값이 이미지에 들어간다.
+- `.dockerignore`에 `.env*`(`.env.db` 포함), `.git`, `node_modules`, `__pycache__`, 데이터·모델 파일을 넣는다. 안 넣으면 비밀값이 이미지에 들어간다.
 - **비밀값을 이미지에 굽지 않는다.** `ARG`/`ENV`로 넣은 값은 `docker history`로 보인다. 빌드에 꼭 필요하면 BuildKit `--secret`.
 - `CMD`는 exec 형식(`["uvicorn", "app.main:app", ...]`). 셸 형식이면 종료 신호(SIGTERM)가 앱에 전달되지 않아 진행 중 요청이 강제로 끊긴다. Compose에 `init: true`를 주면 좀비 프로세스 정리도 된다.
 - 앱은 SIGTERM을 받으면 새 요청을 멈추고 진행 중 요청을 마친 뒤 종료(graceful shutdown). uvicorn은 기본 지원, 워커는 진행 중 작업 처리 방식을 확인한다. Compose `stop_grace_period`(기본 10초)를 가장 긴 요청보다 길게.
