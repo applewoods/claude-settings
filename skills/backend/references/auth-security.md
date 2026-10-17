@@ -1,7 +1,7 @@
 # 인증·권한·보안
 
 > 언제 읽나: 로그인·회원가입·권한을 붙일 때, 외부에 공개되는 API를 만들 때, 파일 업로드·URL 가져오기·웹훅을 만들 때, 보안 리뷰를 할 때.
-> 원칙: 인증은 직접 구현하지 않는다(Next.js → Auth.js, FastAPI → 표준 OAuth2/JWT 계열 라이브러리). 여기는 그 라이브러리를 **올바르게 쓰는 법**과 그 밖의 위협이다.
+> 원칙: 인증은 직접 구현하지 않는다(Next.js → Better Auth, FastAPI → 표준 OAuth2/JWT 계열 라이브러리). 여기는 그 라이브러리를 **올바르게 쓰는 법**과 그 밖의 위협이다.
 
 ## 1. OWASP API Security Top 10 (2023) 기준 위협과 대응
 | # | 위협 | 실제로 터지는 모습 | 대응 |
@@ -20,16 +20,23 @@
 ## 2. 세션 vs 토큰: 무엇을 쓸까
 | 상황 | 추천 | 이유 |
 |---|---|---|
-| 브라우저 웹앱, 같은 사이트(프론트·API 같은 도메인 또는 하위 도메인) | **HttpOnly 쿠키 세션** | JS가 토큰을 못 읽으니 XSS로 토큰 탈취가 안 된다. Auth.js 기본 방식 |
+| 브라우저 웹앱, 같은 사이트(프론트·API 같은 도메인 또는 하위 도메인) | **HttpOnly 쿠키 세션** | JS가 토큰을 못 읽으니 XSS로 토큰 탈취가 안 된다. Better Auth 기본 방식 |
 | 모바일 앱 | 액세스 토큰(짧게) + 리프레시 토큰(보안 저장소: Keychain/Keystore, Expo SecureStore) | 쿠키 관리가 불편하고 앱은 CSRF 대상이 아님 |
 | 서버 간 호출, 외부 개발자 | API 키(해시 저장, 앞 몇 글자만 표시) 또는 OAuth2 client credentials | 사용자 세션이 아님 |
-| Next.js(Auth.js) + FastAPI 분리 구성 | 신원 원본은 하나만 둔다. 기본: Next.js가 로그인을 맡고, Next.js 서버가 FastAPI를 부를 때 **짧은 수명(1~5분)의 서명 토큰**(사용자 ID·역할·`aud`)을 붙이고 FastAPI는 검증만 한다. 브라우저가 FastAPI를 직접 부르게 하려면 **같은 origin**(Caddy 경로 분기)으로 묶어 쿠키가 전달되게 하고, FastAPI가 그 세션을 검증하는 방법(Auth.js 세션 쿠키는 기본이 암호화된 JWT라 그대로 못 읽음)을 따로 정한다 | 두 곳에서 각자 로그인을 구현하면 로그아웃·권한 변경이 어긋난다. 같은 상위 도메인의 다른 호스트는 쿠키 `Domain` 설정 없이 쿠키가 공유되지 않는다 [설계 시 `expert`에게 검토 요청] |
+| Next.js(Better Auth) + FastAPI 분리 구성 | 신원 원본은 하나만 둔다. 기본: Next.js가 로그인을 맡고, Next.js 서버가 FastAPI를 부를 때 **짧은 수명(1~5분)의 서명 토큰**(사용자 ID·역할·`aud`)을 붙이고 FastAPI는 검증만 한다. 브라우저가 FastAPI를 직접 부르게 하려면 **같은 origin**(Caddy 경로 분기)으로 묶어 쿠키가 전달되게 하고, FastAPI가 그 세션을 검증하는 방법(Auth.js 세션 쿠키는 기본이 암호화된 JWT라 그대로 못 읽음)을 따로 정한다 | 두 곳에서 각자 로그인을 구현하면 로그아웃·권한 변경이 어긋난다. 같은 상위 도메인의 다른 호스트는 쿠키 `Domain` 설정 없이 쿠키가 공유되지 않는다 [설계 시 `expert`에게 검토 요청] |
 
 - **브라우저에서 토큰을 `localStorage`에 두지 않는다.** XSS 한 번이면 전부 털린다. 쿠키는 `HttpOnly; Secure; SameSite=Lax`가 기본.
 - JWT의 약점은 **즉시 취소가 안 된다**는 것. 그래서 액세스 토큰은 5~15분, 리프레시 토큰은 회전(rotation: 쓸 때마다 새로 발급, 재사용 감지 시 전부 폐기) + 서버 저장. 강제 로그아웃·권한 박탈이 즉시 필요하면 DB 세션이 더 단순하다.
 - JWT 검증: 서명 알고리즘을 **고정**(`algorithms=["HS256"]` 또는 RS256 등)하고 `exp`·`iss`·`aud`를 검사한다. `alg: none`·알고리즘 혼동 공격은 알고리즘 미고정에서 나온다. 페이로드는 암호화가 아니라 **누구나 읽을 수 있다** — 민감 정보를 넣지 않는다.
 - FastAPI 공식 튜토리얼은 JWT에 PyJWT, 비밀번호 해시에 pwdlib(Argon2)를 쓴다(fastapi.tiangolo.com `tutorial/security/oauth2-jwt`, 2026-10 확인. 예전 튜토리얼의 python-jose·passlib은 교체됨).
-- Auth.js는 2025-09부터 Better Auth 팀이 유지보수하며, 기존 프로젝트는 계속 쓰되 **신규 프로젝트에는 Better Auth를 권장**한다고 공지했다(better-auth.com 블로그 "Auth.js joins Better Auth", GitHub nextauthjs/next-auth 토론 #13252, 2026-10 확인). 사용자 결정은 Auth.js이므로 기본은 유지하고, 새 출시 서비스를 시작할 때는 이 사실을 알리고 선택을 묻는다.
+- **Better Auth (Next.js 기본, 2026-10 공식 문서 better-auth.com/docs 확인)**
+  - 핸들러: `app/api/auth/[...all]/route.ts`에 `export const { GET, POST } = toNextJsHandler(auth)` (`better-auth/next-js`).
+  - 세션 확인: 서버 컴포넌트·Server Action·Route Handler마다 `await auth.api.getSession({ headers: await headers() })`로 **직접 검증**한다. `proxy.ts`(옛 middleware)에서 쓰는 `getSessionCookie`는 쿠키 존재만 보는 **리다이렉트용**이고 검증이 아니다(공식 문서도 "NOT SECURE"로 표시).
+  - Server Action에서 로그인·가입을 호출하면 `nextCookies()` 플러그인을 `plugins` 배열 **맨 끝**에 둬야 쿠키가 설정된다.
+  - DB: PostgreSQL에 Drizzle(`drizzleAdapter`, `provider: "pg"`) 또는 Prisma(`prismaAdapter`) 어댑터를 쓴다. 테이블은 `npx auth@latest generate`로 **스키마·마이그레이션 파일을 만들어 프로젝트 마이그레이션으로 적용**한다. DB에 바로 만드는 `migrate` 명령은 쓰지 않는다(`database` 스킬의 "마이그레이션으로만 변경" 규칙).
+  - 환경 변수: `BETTER_AUTH_SECRET`(32자 이상, `.env`), `BETTER_AUTH_URL`. 비밀값 교체는 `BETTER_AUTH_SECRETS`.
+  - 이메일·비밀번호(`emailAndPassword`)와 소셜 로그인(`socialProviders`)은 내장, 패스키·매직 링크 등은 플러그인. 플러그인을 추가하면 스키마가 바뀔 수 있으니 `generate`를 다시 돌려 마이그레이션을 만든다.
+  - 배경: Auth.js는 2025-09부터 Better Auth 팀이 유지보수하며 신규 프로젝트에는 Better Auth를 권장한다(better-auth.com 블로그 "Auth.js joins Better Auth"). 이미 Auth.js를 쓰는 프로젝트는 유지하고, 옮길지는 사용자에게 묻는다.
 
 ## 3. 비밀번호를 직접 저장해야 할 때
 - 가능하면 소셜 로그인·매직 링크로 비밀번호 저장 자체를 피한다.

@@ -35,7 +35,7 @@ DB 스키마·마이그레이션·쿼리·백업 세부는 `database` 스킬, �
 
 ## 인증: 상황에 따라 추천
 - 직접 구현하지 않는다. 검증된 라이브러리를 쓴다.
-  - Next.js 중심 → Auth.js (2025-09부터 Better Auth 팀이 유지보수, 신규 프로젝트엔 Better Auth를 권장한다는 공지가 있다. 출시 서비스를 새로 시작할 땐 이 사실을 알리고 선택을 묻는다)
+  - Next.js 중심 → **Better Auth** (사용자 결정, 2026-10). 이미 Auth.js를 쓰는 기존 프로젝트는 그대로 유지하고, 옮길지는 사용자에게 묻는다. 연동·주의점은 `references/auth-security.md` 2절
   - FastAPI 중심 → FastAPI용 인증 라이브러리, 또는 표준 OAuth2/JWT 방식(공식 튜토리얼: PyJWT + pwdlib/Argon2)
 - 비밀번호를 직접 저장해야 하면 Argon2id(우선)·bcrypt로 해시한다.
 - 브라우저 웹앱은 HttpOnly 쿠키 세션, 모바일은 짧은 액세스 토큰 + 회전하는 리프레시 토큰. 브라우저 `localStorage`에 토큰을 두지 않는다.
