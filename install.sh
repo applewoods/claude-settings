@@ -50,6 +50,13 @@ wanted = {
 }
 for event, hook in wanted.items():
     groups = hooks.setdefault(event, [])
+    # 저장소 위치가 바뀌었으면 예전 경로의 sync.sh hook은 지운다
+    for g in groups:
+        old = [h for h in g.get("hooks", []) if "/scripts/sync.sh" in h.get("command", "") and h.get("command") != hook["command"]]
+        for h in old:
+            print(f"  - {event}: {h['command']} (예전 경로)")
+        g["hooks"] = [h for h in g.get("hooks", []) if h not in old]
+    groups[:] = [g for g in groups if g.get("hooks")]
     if any(h.get("command") == hook["command"] for g in groups for h in g.get("hooks", [])):
         print(f"  = {event} (이미 등록됨)")
         continue
