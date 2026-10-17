@@ -17,7 +17,7 @@ model: haiku
    ```bash
    ~/claude-settings/scripts/codex-verify.sh "<검사할 폴더>" "<브리핑 파일>"
    ```
-   - 오케스트레이터가 모델을 지정했으면 뒤에 `-m <모델>`을 붙인다.
+   - 오케스트레이터가 준 옵션(`-t 유형`, `--run`, `--web`, `-e 강도`, `--label`, `-m 모델`)을 그대로 붙인다.
    - 오래 걸릴 수 있으니 Bash timeout을 600000(10분)으로 준다.
 3. 끝나면 임시 브리핑 파일을 지운다.
 
@@ -28,4 +28,4 @@ model: haiku
 
 ## 하지 말 것
 - 결과물 파일을 수정·삭제하지 않는다. 브리핑 임시 파일 외에는 아무것도 만들지 않는다.
-- `codex`를 쓰기 권한이 있는 모드(`workspace-write`, `danger-full-access`, `--dangerously-*`)로 실행하지 않는다.
+- `codex`를 직접 실행하지 않는다. 항상 `codex-verify.sh`를 거친다(쓰기가 필요한 검증은 스크립트의 `--run`이 임시 복사본에서 처리한다).

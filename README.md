@@ -64,7 +64,8 @@ claude-settings/
 ├── CLAUDE.md          # 전역 지침 → ~/.claude/CLAUDE.md (모든 세션에서 항상 읽힘)
 ├── install.sh         # ~/.claude 에 심볼릭 링크 연결 + 자동 동기화 hook 등록
 ├── scripts/sync.sh    # 자동 동기화(pull / push), hook이 호출
-├── scripts/codex-verify.sh  # Codex CLI로 읽기 전용 독립 검증 (verifier가 호출)
+├── scripts/codex-verify.sh  # Codex CLI 독립 검증 (읽기 전용 / 격리 복사본 실행 / 웹 검색)
+├── verification/      # 검증 원칙(principles.md)과 업무별 비판 질문(paper·data·dev·design·plan)
 ├── skills/            # 업무별 매뉴얼 → ~/.claude/skills/<이름>/ (관련 작업일 때만 읽힘)
 └── agents/            # 서브 에이전트 정의 → ~/.claude/agents/<이름>.md
 ```
@@ -83,6 +84,21 @@ claude-settings/
 | `verifier` | **Codex CLI** (haiku가 실행만 담당) | 완료 기준으로 독립 검증. Claude와 다른 모델이 판정 | Codex 읽기 전용 샌드박스 |
 
 틀리면 비용이 큰 일은 모델을 한 단계 올리고, 판단이 거의 없는 대량 작업은 내립니다. 삭제·설치·커밋·푸시는 팀원에게 맡기지 않고 오케스트레이터가 사용자 확인 후 직접 합니다.
+
+### 독립 검증 (Codex CLI)
+Claude가 만든 결과를 **다른 회사의 다른 모델(Codex)**이 근거 기반·비판적으로 검사합니다.
+
+- **원칙** (`verification/principles.md`): "틀렸다"는 가정에서 반증 시도 · 모든 판정에 근거 유형([직접 확인]/[간접 추론]/[확인 불가]) · 완료 기준 밖의 문제도 심각도(치명/중요/사소)와 함께 보고 · 확신도와 "판정을 뒤집을 수 있는 것" 명시
+- **업무별 비판 질문**: 논문(과장, 인용이 문장을 실제로 뒷받침하는지), 데이터(누수, 재현, 통계 가정), 개발(경계값, 권한, 테스트가 실제로 검사하는지), 디자인(사용 흐름, 접근성), 기획(누락 시나리오, 근거)
+- **강도**: 기본(작은 일, Claude 자체 확인) → 독립(팀 작업, Codex `-e high`) → 강화(제출·운영 배포, Codex `-e xhigh` + 사용자 최종 판단)
+- **모드**: 읽기 전용(기본) · `--run` 원본의 임시 복사본에서 테스트·분석 실제 실행 · `--web` 인용·출처 웹 확인
+- **기록**: `<프로젝트>/docs/verification/날짜_이름.md`에 브리핑·Codex 보고·수용/기각 처리를 남김
+- **의견 충돌**: Codex 지적은 수용 또는 근거 있는 기각으로만 처리. 근거가 맞서면 expert(opus) 세 번째 의견 또는 사용자 결정
+- **데이터 반출**: 검사 파일 내용이 OpenAI로 전송됨. 프로젝트 `CLAUDE.md`의 "Codex 검증: 허용/금지/매번 확인"을 따름
+
+```bash
+~/claude-settings/scripts/codex-verify.sh <폴더> <브리핑파일|-> -t data,dev --run -e high --label 실험1
+```
 
 ### 스킬
 | 스킬 | 언제 쓰이나 | 출처 |
