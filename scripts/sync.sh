@@ -45,6 +45,32 @@ adopt_new_skills() {
   done
 }
 
+link_repo_items() {
+  # 저장소에는 있는데 ~/.claude에 연결되지 않은 스킬·에이전트를 연결한다(다른 컴퓨터에서 추가된 것).
+  # 같은 이름의 실제 폴더·파일이 이미 있으면 덮지 않고 로그만 남긴다.
+  mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/agents"
+  for dir in "$REPO"/skills/*/; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$dir")"; dst="$CLAUDE_DIR/skills/$name"
+    if [ -L "$dst" ] || [ ! -e "$dst" ]; then
+      [ "$(readlink "$dst" 2>/dev/null)" = "$REPO/skills/$name" ] && continue
+      ln -sfn "$REPO/skills/$name" "$dst" && log "스킬 연결: $name"
+    else
+      log "건너뜀: ~/.claude/skills/$name 이 링크가 아닌 실제 폴더로 있음"
+    fi
+  done
+  for file in "$REPO"/agents/*.md; do
+    [ -e "$file" ] || continue
+    name="$(basename "$file")"; dst="$CLAUDE_DIR/agents/$name"
+    if [ -L "$dst" ] || [ ! -e "$dst" ]; then
+      [ "$(readlink "$dst" 2>/dev/null)" = "$file" ] && continue
+      ln -sfn "$file" "$dst" && log "에이전트 연결: $name"
+    else
+      log "건너뜀: ~/.claude/agents/$name 이 링크가 아닌 실제 파일로 있음"
+    fi
+  done
+}
+
 case "$MODE" in
   pull)
     if [ -z "$(git status --porcelain)" ]; then
@@ -52,9 +78,11 @@ case "$MODE" in
     else
       log "로컬 변경이 있어 pull 생략"
     fi
+    link_repo_items
     ;;
   push)
     adopt_new_skills
+    link_repo_items
     [ -z "$(git status --porcelain)" ] && exit 0
     changed="$(git status --porcelain | awk '{print $2}' | sed 's|/.*||' | sort -u | paste -sd, -)"
     git add -A

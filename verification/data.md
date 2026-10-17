@@ -7,3 +7,7 @@
 - Confounders and sampling bias: could something other than the claimed factor explain the result?
 - Was data silently dropped, imputed or clipped? Do row counts before/after match what is reported?
 - Is the raw data untouched?
+- Unit of analysis: are repeated measures / windows from the same subject treated as independent samples (pseudoreplication)? Is a mixed-effects model or grouped evaluation used where needed?
+- Are superiority claims based on the confidence interval of the paired difference (or a proper paired test), not on overlapping per-model standard deviations?
+- Were baselines tuned with the same budget as the proposed method?
+- Does the code fail loudly on malformed input (shape mismatches, NaN, missing runs) instead of silently computing a wrong number?

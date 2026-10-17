@@ -6,3 +6,5 @@
 - Is "significant" used only for statistical significance, with the test reported?
 - When the task was editing, was the author's original wording preserved except where a change was needed, and is each change shown with its reason?
 - Are there sentences with neither data nor citation behind them that are presented as fact?
+- Are superiority claims supported by the CI or test of the difference between methods, not by overlapping standard deviations?
+- Does the generative-AI usage disclosure match the target venue's current policy?

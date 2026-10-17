@@ -104,16 +104,17 @@ Claude가 만든 결과를 **다른 회사의 다른 모델(Codex)**이 근거 �
 ### 스킬
 | 스킬 | 언제 쓰이나 | 출처 |
 |---|---|---|
-| `team-orchestration` | 여러 단계·조사·검증이 필요한 일을 팀으로 나눌 때, 모델 고를 때 | 직접 작성 |
+| `team-orchestration` | 여러 단계·조사·검증이 필요한 일을 팀으로 나눌 때, 모델 고를 때, 독립 검증 절차 | 직접 작성 |
 | `project-interview` | 새 프로젝트 폴더(루트에 CLAUDE.md 없음)에서 첫 작업 전 인터뷰 → 프로젝트 CLAUDE.md 작성 | 직접 작성 |
-| `paper-writing` | 논문 작성·교정·인용 (인용 확인, 원문→수정안 형식) | 직접 작성 |
-| `data-analysis` | 데이터 분석·ML/DL 실험 (누수 방지, 재현성, 실행한 결과만 보고) | 직접 작성 |
-| `service-planning` | 웹·앱 서비스 기획 (PRD, 유저 스토리, 화면 흐름, HTML 목업, MVP) | 직접 작성 |
+| `research-design` | 논문 기획: 연구 질문·기여·gap·실험 설계·윤리·투고처 선택 → `docs/research-plan.md` | 직접 작성 |
+| `paper-writing` | 논문 작성·교정·인용·리뷰어 자가 점검·rebuttal·AI 고지 (주장–근거 정렬, 원문→수정안 형식) | 직접 작성 |
+| `data-analysis` | 데이터 분석·ML/DL 실험 (검정 선택, 쌍체 모델 비교, 누수 방지, 재현성, 실행한 결과만 보고) | 직접 작성 |
+| `service-planning` | 웹·앱 서비스 기획 (문제 정의·가정 검증·지표·우선순위·개인정보법, PRD, 유저 스토리, 화면 흐름, HTML 목업, MVP) | 직접 작성 |
 | `synthetic-user-research` | 기획 사전 조사: 아이디어만 주면 Claude가 페르소나 분포·질문지 초안 → Codex 사전 검사 → 사용자 검토 1회 → 페르소나 40명을 Claude·Codex가 1명씩 따로 인터뷰 → 고르기·척도 자동 집계(χ²·KL) → 공통 패턴만 `[가설]` → 실제 인터뷰 질문지 (근거: Random Silicon Sampling, arXiv:2402.18144) | 직접 작성 |
-| `ux-ui-design` | 디자인 기준(`docs/DESIGN.md`)과 어떤 디자인 스킬을 언제 쓸지 | 직접 작성 |
-| `frontend` | Next.js · React Native(Expo) · Tailwind + shadcn/ui | 직접 작성 |
-| `backend` | FastAPI 또는 Next.js 서버, 인증, Docker 자체 서버 배포 | 직접 작성 |
-| `database` | PostgreSQL + pgvector, 마이그레이션, 개인정보 보호 | 직접 작성 |
+| `ux-ui-design` | 디자인 기준(`docs/DESIGN.md` 토큰 계층), 화면 상태·모바일·접근성(WCAG 2.2)·AI UX, 어떤 디자인 스킬을 언제 쓸지 | 직접 작성 |
+| `frontend` | Next.js · React Native(Expo) · Tailwind + shadcn/ui, 캐싱·상태 관리·성능 예산·보안·테스트·PR 리뷰 | 직접 작성 |
+| `backend` | FastAPI 또는 Next.js 서버, 인증·보안(OWASP), 외부 API·LLM 호출, 관측성, Docker 자체 서버 배포 | 직접 작성 |
+| `database` | PostgreSQL + pgvector, 스키마·인덱스·트랜잭션, 무중단 마이그레이션, 백업·운영, 개인정보 보호 | 직접 작성 |
 | `design-taste-frontend` | 랜딩·소개 페이지의 "AI 티" 제거 (앱 화면용 아님) | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT), 원본 그대로 |
 | `web-design-guidelines` | 배포 전 UI 코드 검사(접근성, 포커스, 폼 등) | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (MIT), 수정본 ↓ |
 
@@ -130,7 +131,7 @@ Claude가 만든 결과를 **다른 회사의 다른 모델(Codex)**이 근거 �
 
 | 시점 | hook | 하는 일 |
 |---|---|---|
-| 세션 시작 | `SessionStart` → `scripts/sync.sh pull` | 다른 컴퓨터에서 올린 변경을 받음. 로컬에 커밋 안 된 변경이 있으면 건너뜀 |
+| 세션 시작 | `SessionStart` → `scripts/sync.sh pull` | 다른 컴퓨터에서 올린 변경을 받음(로컬에 커밋 안 된 변경이 있으면 건너뜀). 새로 생긴 스킬·에이전트는 `~/.claude`에 자동 연결 |
 | Claude가 한 턴을 마칠 때 | `Stop` → `scripts/sync.sh push` (백그라운드) | 바뀐 설정이 있으면 자동 커밋·푸시. 변경이 없으면 아무것도 안 함 |
 
 - 링크 방식이라 `~/.claude/CLAUDE.md`나 `~/.claude/skills/<이름>/`을 고치면 곧 이 저장소의 파일을 고치는 것입니다.
