@@ -16,9 +16,12 @@ API·인증·비밀번호 해시 알고리즘·서버 배포는 `backend` 스킬
 
 ## 적용 범위 구분
 연구 데모부터 출시 서비스까지 만든다. 규칙마다 범위가 다르다.
+
+> **단계 판별** (정식 정의·판별 순서는 `team-orchestration` 8절): **연구 데모** = 실사용자 없음(나·청중만) / **내부 도구** = 아는 사람이 실제 업무에 씀 / **출시 서비스** = 모르는 사람이 가입·접근. 애매하면 위 단계. 프로젝트 `CLAUDE.md`·`docs/prd.md`에 없으면 한 번 묻고 기록을 제안한다.
+
 - **[필수]** 모든 경우: 마이그레이션, 제약조건, 파라미터 바인딩, 개인정보 최소화, 운영 변경 전 확인.
-- **[출시]** 실제 사용자 데이터가 있는 서비스: 무중단 마이그레이션, PITR 백업·복구 리허설, 최소 권한 역할, RLS, 모니터링.
-- 범위가 애매하면 사용자에게 "데모인지 출시 서비스인지" 한 번 묻고 진행한다.
+- **[내부]** 내부 도구: [필수] + 정기 백업(`pg_dump` + 서버 밖 사본), 앱 전용 DB 역할(superuser로 접속하지 않음).
+- **[출시]** 출시 서비스: 무중단 마이그레이션, PITR 백업·복구 리허설, 최소 권한 역할, RLS, 모니터링.
 
 ## 핵심 원칙
 1. **스키마는 마이그레이션으로만 바꾼다.** DB에 직접 `ALTER`하지 않는다. 자동 생성된 마이그레이션은 초안이다 — 반드시 읽고 고친다(Alembic은 이름 변경을 drop+add로 만든다).
@@ -65,7 +68,7 @@ API·인증·비밀번호 해시 알고리즘·서버 배포는 `backend` 스킬
 | 동시 갱신 | 원자적 UPDATE(`SET n = n - 1 WHERE n > 0`), `ON CONFLICT` | 폼 편집 충돌 → 낙관적(version). 복잡한 판단 → `FOR UPDATE`. 작업 큐 → `FOR UPDATE SKIP LOCKED` |
 | 격리 수준 | READ COMMITTED | 여러 쿼리가 같은 시점 → REPEATABLE READ. 여러 행 불변식 → SERIALIZABLE(둘 다 재시도 필수) |
 | 큰 테이블 스키마 변경 | [출시] expand/contract, CONCURRENTLY, NOT VALID→VALIDATE | 데모·점검 시간 가능 → 한 번에(백업·확인은 유지) |
-| 백업 | 데모: `pg_dump` 정기 + 외부 사본 | [출시] pgBackRest/WAL-G로 PITR + 복원 리허설 |
+| 백업 | 데모·내부: `pg_dump` 정기 + 외부 사본 | [출시] pgBackRest/WAL-G로 PITR + 복원 리허설 |
 | 커넥션 | 앱 풀(인스턴스 수 × 풀 크기 ≤ DB 한도) | 인스턴스·워커가 많거나 서버리스 → PgBouncer(transaction 모드 제약 확인) |
 | 벡터 인덱스 | 수만 개 이하 → 인덱스 없이 측정 | 기본 HNSW(`m`16/`ef_construction`64, `ef_search`로 튜닝). 정적 코퍼스·빌드 제약 → IVFFlat |
 | 벡터 거리 | 코사인 `<=>` + `vector_cosine_ops` | 정규화된 벡터 → 내적 `<#>`. 모델이 L2 기준 → `<->`. 연산자와 opclass 일치 필수 |
@@ -75,7 +78,8 @@ API·인증·비밀번호 해시 알고리즘·서버 배포는 `backend` 스킬
 - 운영 DB에서 확인 없이 `DELETE`/`UPDATE`/`DROP`/`TRUNCATE`, `docker compose down -v`, 세션 강제 종료.
 - `lock_timeout` 없는 운영 DDL, 운영 중 일반 `CREATE INDEX`·`VACUUM FULL`.
 - 이미 적용된 마이그레이션 파일 수정, `push`(Drizzle·Prisma) 사용, 운영에 `migrate dev`.
-- 앱을 superuser(Docker의 `POSTGRES_USER`)로 접속시키기, DB 포트 외부 공개.
+- DB 포트 외부 공개.
+- [내부]·[출시] 앱을 superuser(Docker의 `POSTGRES_USER`)로 접속시키기. 연구 데모는 허용(`references/security-privacy.md`).
 - 메이저 버전 업그레이드를 이미지 태그 교체만으로 하기(데이터 형식이 다르다).
 - 문자열을 이어 붙여 SQL 만들기.
 
