@@ -1,0 +1,66 @@
+{
+  "skill_name": "data-analysis",
+  "evals": [
+    {
+      "id": 1,
+      "name": "repeated-measures-pseudoreplication",
+      "prompt": "evals/files/rt_repeated.csv 는 반응시간 실험 데이터야. 조건 A랑 B 차이가 있는지 t-test로 확인해 줘.",
+      "expected_output": "시행 단위 t-검정(의사반복)을 피하고 피험자 단위 대응 비교나 혼합효과 모형을 쓴다. 효과 크기와 95% CI, 분석 단위와 n을 보고한다.",
+      "files": ["evals/files/rt_repeated.csv"],
+      "expectations": [
+        "분석 코드를 .py 스크립트로 작성해 실제로 실행했고, 보고한 수치가 실행 출력과 일치한다",
+        "600개 시행을 독립 표본으로 두는 t-검정을 최종 결과로 쓰지 않는다(쓰면 의사반복이라고 지적한다)",
+        "피험자 단위로 집계한 대응 비교(paired t 등) 또는 피험자 랜덤 효과를 넣은 혼합효과 모형을 사용한다",
+        "분석 단위와 n(피험자 20명)을 명시한다",
+        "효과 크기와 95% 신뢰구간을 함께 보고한다",
+        "원본 CSV를 수정하지 않는다"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "sensor-classification-leakage",
+      "prompt": "evals/files/sensor_windows.csv 로 event 분류하는 랜덤포레스트 만들어서 정확도 알려 줘.",
+      "expected_output": "피험자(그룹) 분할 또는 시간 순 분할로 누수를 막고, 불균형을 고려한 지표와 하한·강한 베이스라인, 여러 시드 결과를 보고한다.",
+      "files": ["evals/files/sensor_windows.csv"],
+      "expectations": [
+        "분석 코드를 .py 스크립트로 작성해 실제로 실행했고, 보고한 수치가 실행 출력과 일치한다",
+        "무작위 행 분할 대신 피험자 단위 그룹 분할(GroupKFold, leave-subject-out 등) 또는 시간 순 분할을 사용한다",
+        "양성 비율이 낮다(약 13%)는 점을 언급하고, accuracy만 보고하지 않고 PR-AUC·balanced accuracy·F1·MCC 중 하나 이상을 함께 보고한다",
+        "다수 클래스 예측 같은 하한 베이스라인과 비교한다",
+        "여러 시드(또는 여러 fold) 결과를 평균 ± 표준편차로 보고한다",
+        "스케일링 등 전처리를 학습 데이터에만 fit했거나, 트리 모델이라 전처리가 필요 없음을 밝힌다",
+        "랜덤 시드를 고정한다"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "model-comparison-claim",
+      "prompt": "evals/files/model_results.csv 에 모델 A, B 결과가 있어. 논문에 'B가 A보다 성능이 좋다'고 써도 될까?",
+      "expected_output": "평균만으로 판단하지 않고 같은 시드·데이터셋의 쌍체 차이와 CI를 계산한다. 데이터셋마다 방향이 다르면 일반적 우위 주장은 어렵다고 답한다.",
+      "files": ["evals/files/model_results.csv"],
+      "expectations": [
+        "같은 데이터셋·시드끼리 짝지은 쌍체 차이(B−A)를 계산한다",
+        "데이터셋별 결과를 따로 보고, D2에서 방향이 반대(또는 차이 없음)라는 점을 짚는다",
+        "차이의 신뢰구간이나 검정 결과를 제시하고, 표준편차 겹침만으로 판단하지 않는다",
+        "결론으로 'B가 A보다 좋다'는 무조건적 주장을 권하지 않고, 범위를 한정한 문장을 제안한다",
+        "보고한 수치가 실제 실행 출력과 일치한다"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "missing-not-at-random",
+      "prompt": "evals/files/survey_missing.csv 결측치 정리하고 A, B 집단 만족도 평균 비교해서 논문용 그래프도 그려 줘.",
+      "expected_output": "결측 건수를 집단별로 보고하고 B에 몰린 점을 짚은 뒤 처리 방식을 밝힌다. 원본은 그대로 두고 Welch 검정·효과 크기·CI와 PDF·PNG 그림을 만든다.",
+      "files": ["evals/files/survey_missing.csv"],
+      "expectations": [
+        "결측 건수를 집단별로 보고한다(A 4건, B 11건)",
+        "결측이 B 집단에 몰려 있어 무작위 결측이 아닐 수 있고, 완전 사례 분석이 편향될 수 있다는 점을 언급한다",
+        "결측 처리 전후 표본 수를 보고한다",
+        "원본 CSV를 수정하지 않고 가공 결과는 별도 파일로 저장한다",
+        "두 집단 평균 비교에 Welch t-검정(또는 이유를 밝힌 대안)을 쓰고 효과 크기와 95% CI를 보고한다",
+        "그림을 PDF와 PNG로 저장하고, 오차 막대가 SD·SE·CI 중 무엇인지 밝힌다",
+        "분석 코드를 .py 스크립트로 작성해 실제로 실행했다"
+      ]
+    }
+  ]
+}

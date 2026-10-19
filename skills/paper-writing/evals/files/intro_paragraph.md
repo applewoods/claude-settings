@@ -1,0 +1,3 @@
+<!-- 평가용 문단. 실제 논문이 아니며, 인용 (Park et al., 2024)는 존재 여부를 확인하지 않은 가상 인용이다. -->
+
+Wearable sensor-based fall detection has attracted much attention in recent years. Existing approaches rely on hand-crafted thresholds, which leads to high false alarm rates in daily living (Park et al., 2024). In this paper, we propose FallNet, a novel lightweight framework that significantly outperforms prior methods on two public datasets. To the best of our knowledge, we are the first to apply contrastive pretraining to wrist-worn accelerometer data for fall detection. Our model reduces false alarms because it learns user-invariant representations, and the approach can be deployed on any smartwatch.
