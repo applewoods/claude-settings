@@ -10,6 +10,12 @@ from pathlib import Path
 
 LINK = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
 REQUIRED = ("type", "sources", "updated")
+CODE = re.compile(r"```.*?```|`[^`\n]*`", re.S)
+
+
+def links(text):
+    # 코드 블록·인라인 코드 안의 [[...]]는 예시이므로 링크로 세지 않는다
+    return [t.strip() for t in LINK.findall(CODE.sub("", text))]
 
 
 def frontmatter(text):
@@ -30,7 +36,7 @@ def main(root):
     root = Path(root).expanduser()
     pages = {p.stem: p for p in (root / "wiki").rglob("*.md")}
     index_text = (root / "index.md").read_text(encoding="utf-8")
-    index_links = set(LINK.findall(index_text))
+    index_links = set(links(index_text))
 
     broken, missing_fm, no_sources = [], [], []
     inbound = {name: 0 for name in pages}
@@ -41,8 +47,7 @@ def main(root):
             missing_fm.append(name)
         elif fm["sources"] in ("", "[]"):
             no_sources.append(name)
-        for target in LINK.findall(text):
-            target = target.strip()
+        for target in links(text):
             if target in pages:
                 if target != name:
                     inbound[target] += 1
