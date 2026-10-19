@@ -9,7 +9,7 @@ description: 개인 지식 위키(~/wiki) 운영 매뉴얼. 사용자가 "위키
 
 ## 공통
 - 항상 `~/wiki/index.md`부터 읽고 관련 페이지를 고른다. 위키 전체를 훑지 않는다.
-- `raw/`는 읽기만 한다.
+- `raw/`에는 새 자료 추가만 한다. 기존 파일은 수정·덮어쓰기·삭제하지 않는다.
 - 작업이 끝나면 점검 스크립트를 돌리고, `log.md`에 기록하고, 커밋한다.
   ```bash
   python3 "${CLAUDE_SETTINGS_DIR:-$HOME/claude-settings}/skills/wiki/scripts/lint.py" ~/wiki

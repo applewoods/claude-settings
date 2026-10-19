@@ -32,17 +32,30 @@ SWIFT
   exit 0
 fi
 
-in="$1"; out="${2:-/dev/stdout}"
+in="$1"; out="${2:-}"
 [ -f "$in" ] || { echo "파일 없음: $in" >&2; exit 1; }
+tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+
+# 추출이 끝나면 본문이 실제로 있는지 확인한다. 스캔 PDF는 쪽 머리줄만 남는다.
+finish() {
+  pages="$(grep -c '^=== p\.' "$tmp" || true)"
+  chars="$(grep -v '^=== p\.' "$tmp" | tr -d '[:space:]' | wc -c | tr -d ' ')"
+  if [ -n "$out" ]; then cp "$tmp" "$out"; else cat "$tmp"; fi
+  if [ "${pages:-0}" -eq 0 ] || [ "$chars" -lt $(( ${pages:-1} * 200 )) ]; then
+    echo "경고: 본문 텍스트가 거의 없음(${pages}쪽, 글자 ${chars}개). 스캔 PDF일 수 있다. 내용을 짐작하지 말고 사용자에게 알린다." >&2
+    exit 3
+  fi
+  exit 0
+}
 
 if command -v pdftotext >/dev/null && command -v pdfinfo >/dev/null; then
   n="$(pdfinfo "$in" | awk '/^Pages:/{print $2}')"
-  { for ((i=1; i<=n; i++)); do echo "=== p.$i ==="; pdftotext -layout -f "$i" -l "$i" "$in" -; done; } > "$out"
-  exit 0
+  { for ((i=1; i<=n; i++)); do echo "=== p.$i ==="; pdftotext -layout -f "$i" -l "$i" "$in" -; done; } > "$tmp"
+  finish
 fi
 
 command -v swift >/dev/null || { echo "pdftotext도 swift도 없음: brew install poppler 필요" >&2; exit 1; }
-swift - "$in" > "$out" <<'SWIFT'
+swift - "$in" > "$tmp" <<'SWIFT'
 import Foundation
 import PDFKit
 let url = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -52,3 +65,4 @@ for i in 0..<doc.pageCount {
     print(doc.page(at: i)?.string ?? "")
 }
 SWIFT
+finish
