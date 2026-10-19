@@ -42,10 +42,12 @@ for file in "$REPO"/agents/*.md; do
   link "$file" "$CLAUDE_DIR/agents/$(basename "$file")"
 done
 
-echo "settings.json (env, auto-sync hooks)"
-# ~/.claude/settings.json 에 자동 동기화 hook을 추가한다(기존 설정은 유지, 중복 추가 안 함).
+echo "settings.json (env, auto-sync hooks, overwrite guard, ask rules)"
+# ~/.claude/settings.json 에 hook과 권한 규칙을 추가한다(기존 설정은 유지, 중복 추가 안 함).
 #   SessionStart → sync.sh pull : 세션 시작 시 다른 컴퓨터의 변경 받기
 #   Stop         → sync.sh push : 턴이 끝날 때 바뀐 설정 커밋·푸시
+#   PreToolUse(Write) → guard-overwrite.sh : 기존 파일 덮어쓰기 전에 묻기
+#   permissions.ask   : 삭제·push·reset --hard·clean·compose down·패키지 설치는 항상 묻기
 SETTINGS="$CLAUDE_DIR/settings.json" SYNC="$REPO/scripts/sync.sh" REPO="$REPO" python3 - <<'PY'
 import json, os
 path, sync = os.environ["SETTINGS"], os.environ["SYNC"]
@@ -72,6 +74,23 @@ for event, hook in wanted.items():
         continue
     groups.append({"hooks": [hook]})
     print(f"  + {event}: {hook['command']}")
+
+# 기존 파일 덮어쓰기 전에 묻기 (PreToolUse, Write)
+guard = f'"{os.environ["REPO"]}/scripts/guard-overwrite.sh"'
+groups = hooks.setdefault("PreToolUse", [])
+if any(h.get("command") == guard for g in groups for h in g.get("hooks", [])):
+    print("  = PreToolUse(Write) 덮어쓰기 확인 (이미 등록됨)")
+else:
+    groups.append({"matcher": "Write", "hooks": [{"type": "command", "command": guard, "timeout": 10}]})
+    print(f"  + PreToolUse(Write): {guard}")
+
+# 되돌리기 어려운 명령은 항상 묻기 (기존 ask 규칙은 유지)
+ask = data.setdefault("permissions", {}).setdefault("ask", [])
+for rule in ["Bash(rm *)", "Bash(git push *)", "Bash(git reset --hard *)", "Bash(git clean *)",
+             "Bash(docker compose down *)", "Bash(pip install *)", "Bash(pip3 install *)", "Bash(conda install *)"]:
+    if rule not in ask:
+        ask.append(rule)
+        print(f"  + permissions.ask: {rule}")
 tmp = path + ".tmp"
 json.dump(data, open(tmp, "w"), ensure_ascii=False, indent=2)
 os.replace(tmp, path)
