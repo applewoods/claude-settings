@@ -2,7 +2,7 @@
 """지식 위키 기계 점검: 깨진 링크, index 누락, 고립 페이지, frontmatter·출처 누락.
 
 사용법: python3 lint.py ~/wiki
-문제가 있으면 목록을 출력하고 종료 코드 1, 없으면 0.
+문제가 있으면 목록을 출력하고 종료 코드 1, 없으면 0. 아직 없는 페이지로의 링크는 경고만 한다.
 """
 import re
 import sys
@@ -54,8 +54,9 @@ def main(root):
             else:
                 broken.append(f"{name} → [[{target}]]")
 
+    # 아직 없는 페이지로의 링크는 위키 규칙상 허용(만들 페이지 후보)이라 경고로만 보여 준다
+    warnings = {"아직 없는 페이지로의 링크 (만들 페이지 후보)": broken}
     report = {
-        "깨진 링크 (만들 페이지 후보일 수 있음)": broken,
         "index.md에 없는 페이지": sorted(set(pages) - index_links),
         "index.md에만 있고 파일이 없는 항목": sorted(index_links - set(pages)),
         "다른 페이지에서 링크하지 않는 페이지": sorted(n for n, c in inbound.items() if c == 0),
@@ -68,6 +69,11 @@ def main(root):
         if items:
             found = True
             print(f"\n## {title} ({len(items)})")
+            for item in items:
+                print(f"- {item}")
+    for title, items in warnings.items():
+        if items:
+            print(f"\n## [경고, 실패 아님] {title} ({len(items)})")
             for item in items:
                 print(f"- {item}")
     if not found:
