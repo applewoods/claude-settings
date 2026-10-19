@@ -106,7 +106,9 @@ for rule in ["Bash(rm -rf *)", "Bash(rm -fr *)", "Bash(git push --force *)", "Ba
 # 되돌리기 어려운 명령은 항상 묻기 (기존 ask 규칙은 유지)
 ask = perms.setdefault("ask", [])
 for rule in ["Bash(rm *)", "Bash(git push *)", "Bash(git clean *)",
-             "Bash(docker compose down *)", "Bash(pip install *)", "Bash(pip3 install *)", "Bash(conda install *)"]:
+             "Bash(docker compose down *)", "Bash(pip install *)", "Bash(pip3 install *)", "Bash(conda install *)",
+             # 경로를 붙인 pip(.venv/bin/pip)와 python -m pip도 잡도록 앞쪽 와일드카드 (2026-10-19 확인)
+             "Bash(*pip install *)", "Bash(*pip3 install *)", "Bash(*conda install *)"]:
     if rule not in ask:
         ask.append(rule)
         print(f"  + permissions.ask: {rule}")
