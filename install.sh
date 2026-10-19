@@ -47,7 +47,9 @@ echo "settings.json (env, auto-sync hooks, overwrite guard, ask rules)"
 #   SessionStart → sync.sh pull : 세션 시작 시 다른 컴퓨터의 변경 받기
 #   Stop         → sync.sh push : 턴이 끝날 때 바뀐 설정 커밋·푸시
 #   PreToolUse(Write) → guard-overwrite.sh : 기존 파일 덮어쓰기 전에 묻기
-#   permissions.ask   : 삭제·push·reset --hard·clean·compose down·패키지 설치는 항상 묻기
+#   permissions.defaultMode : acceptEdits (편집은 바로, ask·hook은 확인 창)
+#   permissions.deny  : rm -rf·force push·reset --hard·compose down -v 는 막기
+#   permissions.ask   : 삭제·push·clean·compose down·패키지 설치는 항상 묻기
 SETTINGS="$CLAUDE_DIR/settings.json" SYNC="$REPO/scripts/sync.sh" REPO="$REPO" python3 - <<'PY'
 import json, os
 path, sync = os.environ["SETTINGS"], os.environ["SYNC"]
@@ -84,9 +86,26 @@ else:
     groups.append({"matcher": "Write", "hooks": [{"type": "command", "command": guard, "timeout": 10}]})
     print(f"  + PreToolUse(Write): {guard}")
 
+perms = data.setdefault("permissions", {})
+# 기본 모드: 편집은 묻지 않고, ask 규칙·덮어쓰기 hook은 확인 창을 띄운다.
+# (데스크톱 앱 auto 모드는 ask를 건너뛰는 것을 2026-10-19에 확인. 이미 다른 값을 정해 두었으면 유지)
+if "defaultMode" not in perms:
+    perms["defaultMode"] = "acceptEdits"
+    print("  + permissions.defaultMode: acceptEdits")
+else:
+    print(f"  = permissions.defaultMode: {perms['defaultMode']} (기존 값 유지)")
+
+# 되돌릴 수 없는 명령은 막기 (어떤 모드에서도 실행 안 됨, 필요하면 사용자가 직접 실행)
+deny = perms.setdefault("deny", [])
+for rule in ["Bash(rm -rf *)", "Bash(rm -fr *)", "Bash(git push --force *)", "Bash(git push -f *)",
+             "Bash(git reset --hard *)", "Bash(docker compose down -v *)"]:
+    if rule not in deny:
+        deny.append(rule)
+        print(f"  + permissions.deny: {rule}")
+
 # 되돌리기 어려운 명령은 항상 묻기 (기존 ask 규칙은 유지)
-ask = data.setdefault("permissions", {}).setdefault("ask", [])
-for rule in ["Bash(rm *)", "Bash(git push *)", "Bash(git reset --hard *)", "Bash(git clean *)",
+ask = perms.setdefault("ask", [])
+for rule in ["Bash(rm *)", "Bash(git push *)", "Bash(git clean *)",
              "Bash(docker compose down *)", "Bash(pip install *)", "Bash(pip3 install *)", "Bash(conda install *)"]:
     if rule not in ask:
         ask.append(rule)
