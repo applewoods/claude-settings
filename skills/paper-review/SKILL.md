@@ -10,7 +10,7 @@ description: 논문 읽기·문헌 리뷰 매뉴얼. 논문 PDF·arXiv 링크·Z
 > **팀으로 진행:** 정독이나 여러 편을 한 번에 할 때는 `team-orchestration` 스킬대로 나눈다. builder(sonnet)가 추출, expert(opus)가 비판적 평가·내 연구 연결, verifier가 수치 대조. 훑기 한 편은 직접 한다.
 
 ## 0. 준비
-1. `~/wiki/CLAUDE.md`(위키 규칙), `~/wiki/index.md`, `~/wiki/wiki/my-research.md`(내 연구)를 읽는다. 같은 논문 페이지가 이미 있으면 새로 만들지 않고 갱신한다.
+1. `~/wiki/CLAUDE.md`(위키 규칙), `~/wiki/index.md`, `~/wiki/my-research.md`(내 연구)를 읽는다. 같은 논문 페이지가 이미 있으면 새로 만들지 않고 갱신한다.
 2. PDF를 `~/wiki/raw/<저자성><연도>-<핵심어>.pdf`로 복사한다(원본은 그대로 둔다). arXiv 링크면 내려받기 전에 파일명·출처·크기를 알리고 확인을 받는다. Zotero에서 찾을 때는 `~/Zotero/storage/*/`를 검색한다.
 3. PDF는 번들 스크립트로 텍스트를 뽑아 읽는다. poppler가 없어도 macOS PDFKit으로 동작하며, 페이지마다 `=== p.N ===` 머리줄이 있어 출처 쪽 번호를 그대로 쓸 수 있다. 직접 추출 코드를 새로 만들지 않는다.
    ```bash
@@ -55,7 +55,7 @@ description: 논문 읽기·문헌 리뷰 매뉴얼. 논문 PDF·arXiv 링크·Z
 - **가져올 것:** 방법·설계·평가 방식·데이터셋 중 구체적으로 무엇을, 어디에.
 - **겹치는 정도:** 내 연구와 같은 문제를 푸는지, 내 기여를 위협하는지.
 - **남은 gap:** 이 논문이 안 한 것 중 내 연구가 할 수 있는 것. `research-design`의 선행연구 지도에 쓸 수 있게 한 줄로.
-- `my-research.md`가 없거나 비어 있으면 지어내지 말고, 이 절에 "my-research.md 비어 있음 — 일반적 활용 가능성만 적음"이라고 쓰고 사용자에게 채우자고 제안한다.
+- `my-research.md`가 없거나 아직 `[작성 필요]` 상태면 지어내지 말고, 이 절에 "my-research.md 비어 있음 — 일반적 활용 가능성만 적음"이라고 쓰고 사용자에게 채우자고 제안한다. 사용자가 대화에서 연구 내용을 알려 주면 `my-research.md`에 옮겨 적고 이 절을 다시 쓴다.
 
 ## 6. 위키 반영과 검증
 1. `templates/paper-page.md` 양식으로 `~/wiki/wiki/papers/<파일명>.md`를 쓴다.
