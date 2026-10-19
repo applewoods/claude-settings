@@ -52,12 +52,15 @@ def main(root):
         fm = frontmatter(text)
         if fm is None or any(k not in fm for k in REQUIRED):
             missing_fm.append(name)
-        elif fm["sources"] in ("", "[]"):
-            no_sources.append(name)
         else:
+            # 목록 표기([a, "b"])와 단일 값을 모두 받아 따옴표를 벗긴다. null·~·빈 값은 출처 없음
+            items = [s.strip().strip("'\"") for s in fm["sources"].strip().strip("[]").split(",")]
+            items = [s for s in items if s and s.lower() not in ("null", "~", "none")]
+            if not items:
+                no_sources.append(name)
             # raw/ 로 시작하는 출처는 실제 파일이 있어야 한다
-            for src in re.findall(r"raw/[^,\]\s]+", fm["sources"]):
-                if not (root / src).exists():
+            for src in items:
+                if src.startswith("raw/") and not (root / src).exists():
                     bad_sources.append(f"{name} → {src}")
         for target in links(text):
             if target in pages:

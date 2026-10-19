@@ -39,12 +39,17 @@ tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
 # 추출이 끝나면 본문이 실제로 있는지 확인한다. 스캔 PDF는 쪽 머리줄만 남는다.
 finish() {
   pages="$(grep -c '^=== p\.' "$tmp" || true)"
-  chars="$(grep -v '^=== p\.' "$tmp" | tr -d '[:space:]' | wc -c | tr -d ' ')"
+  # macOS tr는 멀티바이트 문자에서 중간에 멈출 수 있어 awk로 센다
+  chars="$(LC_ALL=C awk '!/^=== p\./{gsub(/[[:space:]]/,""); n+=length($0)} END{print n+0}' "$tmp")"
   if [ -n "$out" ]; then cp "$tmp" "$out"; else cat "$tmp"; fi
   if [ "${pages:-0}" -eq 0 ] || [ "$chars" -lt $(( ${pages:-1} * 200 )) ]; then
     echo "경고: 본문 텍스트가 거의 없음(${pages}쪽, 글자 ${chars}개). 스캔 PDF일 수 있다. 내용을 짐작하지 말고 사용자에게 알린다." >&2
     exit 3
   fi
+  # 일부 쪽만 스캔 이미지인 PDF: 글자가 거의 없는 쪽을 알려 준다(빈 쪽·그림 전용 쪽일 수도 있으니 이미지로 확인)
+  thin="$(LC_ALL=C awk '/^=== p\./{if(p)print p, n; p=$2; n=0; next} {gsub(/[[:space:]]/,""); n+=length($0)} END{if(p)print p, n}' "$tmp" \
+          | awk '$2 < 50 {printf "%s ", $1}')"
+  [ -n "$thin" ] && echo "참고: 글자가 거의 없는 쪽: ${thin}— 스캔·그림 전용 쪽이면 --png로 렌더링해 확인한다." >&2
   exit 0
 }
 
