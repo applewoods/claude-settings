@@ -6,7 +6,9 @@
       "name": "repeated-measures-pseudoreplication",
       "prompt": "evals/files/rt_repeated.csv 는 반응시간 실험 데이터야. 조건 A랑 B 차이가 있는지 t-test로 확인해 줘.",
       "expected_output": "시행 단위 t-검정(의사반복)을 피하고 피험자 단위 대응 비교나 혼합효과 모형을 쓴다. 효과 크기와 95% CI, 분석 단위와 n을 보고한다.",
-      "files": ["evals/files/rt_repeated.csv"],
+      "files": [
+        "evals/files/rt_repeated.csv"
+      ],
       "expectations": [
         "분석 코드를 .py 스크립트로 작성해 실제로 실행했고, 보고한 수치가 실행 출력과 일치한다",
         "600개 시행을 독립 표본으로 두는 t-검정을 최종 결과로 쓰지 않는다(쓰면 의사반복이라고 지적한다)",
@@ -14,14 +16,17 @@
         "분석 단위와 n(피험자 20명)을 명시한다",
         "효과 크기와 95% 신뢰구간을 함께 보고한다",
         "원본 CSV를 수정하지 않는다"
-      ]
+      ],
+      "set": "v1"
     },
     {
       "id": 2,
       "name": "sensor-classification-leakage",
       "prompt": "evals/files/sensor_windows.csv 로 event 분류하는 랜덤포레스트 만들어서 정확도 알려 줘.",
       "expected_output": "피험자(그룹) 분할 또는 시간 순 분할로 누수를 막고, 불균형을 고려한 지표와 하한·강한 베이스라인, 여러 시드 결과를 보고한다.",
-      "files": ["evals/files/sensor_windows.csv"],
+      "files": [
+        "evals/files/sensor_windows.csv"
+      ],
       "expectations": [
         "분석 코드를 .py 스크립트로 작성해 실제로 실행했고, 보고한 수치가 실행 출력과 일치한다",
         "무작위 행 분할 대신 피험자 단위 그룹 분할(GroupKFold, leave-subject-out 등) 또는 시간 순 분할을 사용한다",
@@ -30,28 +35,34 @@
         "여러 시드(또는 여러 fold) 결과를 평균 ± 표준편차로 보고한다",
         "스케일링 등 전처리를 학습 데이터에만 fit했거나, 트리 모델이라 전처리가 필요 없음을 밝힌다",
         "랜덤 시드를 고정한다"
-      ]
+      ],
+      "set": "v1"
     },
     {
       "id": 3,
       "name": "model-comparison-claim",
       "prompt": "evals/files/model_results.csv 에 모델 A, B 결과가 있어. 논문에 'B가 A보다 성능이 좋다'고 써도 될까?",
       "expected_output": "평균만으로 판단하지 않고 같은 시드·데이터셋의 쌍체 차이와 CI를 계산한다. 데이터셋마다 방향이 다르면 일반적 우위 주장은 어렵다고 답한다.",
-      "files": ["evals/files/model_results.csv"],
+      "files": [
+        "evals/files/model_results.csv"
+      ],
       "expectations": [
         "같은 데이터셋·시드끼리 짝지은 쌍체 차이(B−A)를 계산한다",
         "데이터셋별 결과를 따로 보고, D2에서 방향이 반대(또는 차이 없음)라는 점을 짚는다",
         "차이의 신뢰구간이나 검정 결과를 제시하고, 표준편차 겹침만으로 판단하지 않는다",
         "결론으로 'B가 A보다 좋다'는 무조건적 주장을 권하지 않고, 범위를 한정한 문장을 제안한다",
         "보고한 수치가 실제 실행 출력과 일치한다"
-      ]
+      ],
+      "set": "v1"
     },
     {
       "id": 4,
       "name": "missing-not-at-random",
       "prompt": "evals/files/survey_missing.csv 결측치 정리하고 A, B 집단 만족도 평균 비교해서 논문용 그래프도 그려 줘.",
       "expected_output": "결측 건수를 집단별로 보고하고 B에 몰린 점을 짚은 뒤 처리 방식을 밝힌다. 원본은 그대로 두고 Welch 검정·효과 크기·CI와 PDF·PNG 그림을 만든다.",
-      "files": ["evals/files/survey_missing.csv"],
+      "files": [
+        "evals/files/survey_missing.csv"
+      ],
       "expectations": [
         "결측 건수를 집단별로 보고한다(A 4건, B 11건)",
         "결측이 B 집단에 몰려 있어 무작위 결측이 아닐 수 있고, 완전 사례 분석이 편향될 수 있다는 점을 언급한다",
@@ -60,7 +71,99 @@
         "두 집단 평균 비교에 Welch t-검정(또는 이유를 밝힌 대안)을 쓰고 효과 크기와 95% CI를 보고한다",
         "그림을 PDF와 PNG로 저장하고, 오차 막대가 SD·SE·CI 중 무엇인지 밝힌다",
         "분석 코드를 .py 스크립트로 작성해 실제로 실행했다"
-      ]
+      ],
+      "set": "v1"
+    },
+    {
+      "id": 5,
+      "name": "advisor-wants-trial-level-ttest",
+      "prompt": "evals/files/rt_repeated.csv 반응시간 데이터야. 교수님이 trial 단위로 독립표본 t-test 하라고 하셨으니까 그걸로 p값만 빨리 줘.",
+      "expected_output": "요청한 trial 단위 결과를 주더라도 의사반복이라 주 결과로 쓸 수 없음을 설명하고, 피험자 단위 분석을 주 결과로 함께 제시한다.",
+      "files": [
+        "evals/files/rt_repeated.csv"
+      ],
+      "expectations": [
+        "trial 단위 독립 t-검정이 의사반복(독립성 위반)이라는 점을 설명한다",
+        "피험자 단위 대응 비교 또는 혼합효과 모형 결과를 함께(주 결과로) 제시한다",
+        "효과 크기와 95% CI를 보고하고 효과 크기 지표 이름을 밝힌다",
+        "분석 단위와 n(피험자 20명)을 명시한다",
+        "교수님께 설명할 수 있는 짧은 근거나 문장을 제시한다",
+        "분석 코드를 .py 스크립트로 작성해 실행했고 보고 수치가 출력과 일치한다"
+      ],
+      "set": "v2"
+    },
+    {
+      "id": 6,
+      "name": "tune-for-best-score-leakage",
+      "prompt": "evals/files/sensor_windows_v2.csv 로 event 분류 모델 만들어 줘. 하이퍼파라미터 최대한 튜닝해서 가장 좋은 점수 나오게 하고, 최종 성능 알려 줘.",
+      "expected_output": "피험자 단위로 나누고 튜닝은 내부(중첩) CV로만 하며, 강한 베이스라인도 같은 튜닝 예산으로 비교한다. 불균형 지표와 PR-AUC 기준선, 무작위 분할 대비 부풀림을 보고한다.",
+      "files": [
+        "evals/files/sensor_windows_v2.csv"
+      ],
+      "expectations": [
+        "피험자 단위 그룹 분할(GroupKFold, LOSO 등)로 평가한다",
+        "하이퍼파라미터 튜닝을 평가용 fold 밖(중첩 CV 또는 별도 검증 세트)에서 하고, 튜닝에 쓴 점수를 최종 성능으로 보고하지 않는다",
+        "비교 모델(베이스라인)에도 같은 튜닝 예산·같은 분할을 적용하거나, 그렇지 못했다면 그 사실을 밝힌다",
+        "다수 클래스 같은 하한 베이스라인과 비교한다",
+        "PR-AUC를 보고하면서 기준선이 양성 비율(약 0.15)이라고 밝히거나, balanced accuracy·MCC 등 불균형 지표를 보고한다",
+        "무작위 분할 점수가 피험자 분할보다 부풀려진다는 점을 수치로 보이거나 경고한다",
+        "탐색 공간과 시도 횟수를 보고한다",
+        "분석 코드를 .py 스크립트로 작성해 실행했고 시드를 고정했다"
+      ],
+      "set": "v2"
+    },
+    {
+      "id": 7,
+      "name": "sd-overlap-claim-summary-only",
+      "prompt": "evals/files/model_summary.md 표 보면 표준편차 범위가 안 겹치잖아. 그러니까 논문에 'Ours가 baseline보다 유의하게 높다'고 써도 되지?",
+      "expected_output": "표준편차 겹침 여부는 유의성 기준이 아니며, 같은 시드끼리의 쌍체 차이와 그 CI·검정이 필요하다고 답한다. 요약 표만으로는 쌍체 분석을 할 수 없으니 시드별 원값을 요청한다.",
+      "files": [
+        "evals/files/model_summary.md"
+      ],
+      "expectations": [
+        "표준편차(또는 오차 막대) 겹침 여부로 유의성을 판단할 수 없다고 설명한다",
+        "같은 시드끼리 짝지은 쌍체 차이와 그 신뢰구간·검정이 필요하다고 말한다",
+        "요약 표만으로는 쌍체 분석이 불가능하므로 시드별 원값을 요청한다",
+        "검정 없이 'significantly'를 쓰지 말라고 하고, 지금 쓸 수 있는 대안 문장을 제시한다",
+        "요약통계로 독립표본 검정을 돌려 그 p값을 유의성 근거로 제시하지 않는다(제시한다면 쌍체 구조를 무시한 근사라고 명시한다)"
+      ],
+      "set": "v2"
+    },
+    {
+      "id": 8,
+      "name": "two-stage-normality-request",
+      "prompt": "evals/files/task_time.csv 두 집단 과제 시간 비교해 줘. 정규성 검정 먼저 해서 정규면 t-test, 아니면 Mann-Whitney로 해 줘. 논문용 그림도.",
+      "expected_output": "정규성 사전검정으로 검정을 갈아타는 2단계 절차를 쓰지 않는 이유를 설명하고, 치우친 분포에 맞는 방법(순위 기반·로그 변환·부트스트랩 CI 등)을 처음부터 정해 쓴다. 효과 크기·CI, 그림 형식을 지킨다.",
+      "files": [
+        "evals/files/task_time.csv"
+      ],
+      "expectations": [
+        "정규성 검정 결과로 검정을 고르는 2단계 절차의 문제(오류율 왜곡 등)를 설명하고 그 절차를 주 분석으로 쓰지 않는다",
+        "분포가 치우쳤다는 점을 그림(히스토그램·Q-Q 등)이나 기술통계로 보이고, 그에 맞는 방법을 처음부터 정한다",
+        "순위 기반 검정을 쓰면 평균이 아닌 다른 것(확률적 우위 등)을 검정한다는 점을 밝힌다",
+        "효과 크기(지표 이름 명시)와 95% CI를 보고한다",
+        "그림을 PDF와 PNG로 저장하고 축 이름·단위가 있다",
+        "분석 코드를 .py 스크립트로 작성해 실행했고 보고 수치가 출력과 일치한다"
+      ],
+      "set": "v2"
+    },
+    {
+      "id": 9,
+      "name": "subgroup-fishing",
+      "prompt": "evals/files/site_outcomes.csv 기관(site)별로 처치(treatment) 효과 t-test 다 돌려서 효과 있는 기관 알려 줘. 유의한 데만 논문에 쓰려고.",
+      "expected_output": "12번 검정의 다중 비교를 보정하고(탐색이므로 BH 등), 보정 후 유의한 기관이 없다는 결과를 보고한다. 유의한 곳만 골라 쓰는 선택적 보고의 문제를 설명한다.",
+      "files": [
+        "evals/files/site_outcomes.csv"
+      ],
+      "expectations": [
+        "검정 횟수(12회)를 밝히고 다중 비교 보정(BH, Holm 등)을 적용한다",
+        "보정 후 유의한 기관이 없다는 결과를 정확히 보고한다(보정 전 명목상 유의 1곳은 보정 후 사라짐)",
+        "유의한 결과만 골라 보고하는 것(선택적 보고, p-hacking)의 문제를 설명한다",
+        "기관별 분석을 탐색적 분석으로 표시하고, 전체 처치 효과(기관을 고려한 모형 등)를 주 분석으로 제안하거나 제시한다",
+        "기관별 효과 크기와 CI를 표(CSV 저장 포함)로 보고한다",
+        "분석 코드를 .py 스크립트로 작성해 실행했고 보고 수치가 출력과 일치한다"
+      ],
+      "set": "v2"
     }
   ]
 }
