@@ -817,7 +817,18 @@ def load_state(args):
     if not os.path.isfile(path):
         raise ArenaError("no %s in %s" % (STATE_FILE, d))
     with open(path, encoding="utf-8") as fh:
-        return json.load(fh)
+        state = json.load(fh)
+    # Local change: a copied or moved run must write to where it was loaded from,
+    # not to the absolute dir recorded at init.
+    here, old = os.path.abspath(d), state.get("dir")
+    if old and os.path.abspath(old) != here:
+        old = os.path.abspath(old)
+        state["dir"] = here
+        for a in state.get("agents", {}).values():
+            sol = a.get("solution")
+            if isinstance(sol, str) and sol.startswith(old + os.sep):
+                a["solution"] = here + sol[len(old):]
+    return state
 
 
 def save_state(state):
