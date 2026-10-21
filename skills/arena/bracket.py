@@ -334,15 +334,20 @@ def pair_round(state, rnd, alive):
     return matches, bye
 
 
+def open_final(state):
+    """Set up the blind final check (champion vs baseline) once a champion exists."""
+    if state.get("has_baseline") and state.get("champion") and not state.get("final"):
+        rng = random.Random("arena-final:%s" % state["seed"])
+        x = "champion" if rng.random() < 0.5 else "baseline"
+        state["final"] = {"X": x, "Y": "baseline" if x == "champion" else "champion", "result": None}
+
+
 def open_round(state, alive):
     """Open the next round, or crown the champion when one agent is left."""
     alive = sorted(alive)
     if len(alive) == 1:
         state["champion"] = alive[0]
-        if state.get("has_baseline") and not state.get("final"):
-            rng = random.Random("arena-final:%s" % state["seed"])
-            x = "champion" if rng.random() < 0.5 else "baseline"
-            state["final"] = {"X": x, "Y": "baseline" if x == "champion" else "champion", "result": None}
+        open_final(state)
         return None
     rnd = len(state["rounds"]) + 1
     matches, bye = pair_round(state, rnd, alive)
@@ -685,7 +690,7 @@ def render_job(state, job, templates, task):
     if kind == "competitor":
         aid = job["agent"]
         v.update(_card_values(agents[aid]["card"]))
-        if state.get("has_baseline"):
+        if state.get("has_baseline") and state.get("baseline_kind") != "control":
             v["baseline_note"] = (
                 "The user already got an answer to this task and was NOT satisfied with it. It is at "
                 "%s. Read it first and work out exactly why it fell short. Then beat it. Do not just "
@@ -880,8 +885,11 @@ def cmd_init(args):
     if not task:
         raise ArenaError("the task is empty. Pass --task-file or --task")
     baseline = None
-    if args.baseline_file:
-        with open(args.baseline_file, encoding="utf-8") as fh:
+    if args.baseline_file and args.control_file:
+        raise ArenaError("pass --baseline-file or --control-file, not both")
+    src = args.baseline_file or args.control_file
+    if src:
+        with open(src, encoding="utf-8") as fh:
             baseline = fh.read().strip()
         if not baseline:
             raise ArenaError("the baseline file is empty")
@@ -902,6 +910,8 @@ def cmd_init(args):
             open(os.path.join(d, "rubric.md"), "w", encoding="utf-8") as dst:
         dst.write(src.read())
     state = new_state(n, seed, data, d, wave=args.wave, has_baseline=bool(baseline))
+    if baseline:
+        state["baseline_kind"] = "control" if args.control_file else "rejected"
     save_state(state)
     if default_dir:
         os.makedirs(ROOT, exist_ok=True)
@@ -914,6 +924,26 @@ def cmd_init(args):
     print("%d rounds (%s). %d sub-agent calls in %d waves of %d%s."
           % (t["rounds"], " -> ".join(str(s) for s in bracket_sizes(n)), t["calls"] + (1 if baseline else 0),
              t["waves"] + (1 if baseline else 0), args.wave, ", including the final check" if baseline else ""))
+    print("next: %s" % _cmd("next"))
+    return 0
+
+
+def cmd_control(args):
+    """Attach a single-pass control answer to an existing run (local addition)."""
+    state = load_state(args)
+    if state.get("has_baseline"):
+        raise ArenaError("this run already has a baseline (%s)" % state.get("baseline_kind", "rejected"))
+    with open(args.file, encoding="utf-8") as fh:
+        text = fh.read().strip()
+    if not text:
+        raise ArenaError("the control file is empty")
+    with open(os.path.join(state["dir"], "baseline.md"), "w", encoding="utf-8") as fh:
+        fh.write(text + "\n")
+    state["has_baseline"] = True
+    state["baseline_kind"] = "control"
+    open_final(state)
+    save_state(state)
+    print("control attached. The final check runs %s." % ("now" if state.get("final") else "after the champion is crowned"))
     print("next: %s" % _cmd("next"))
     return 0
 
@@ -1138,10 +1168,11 @@ def cmd_winner(args):
             print("           survived: %s" % s)
     fin = rep["final"]
     if fin:
+        label = "the single-pass control" if state.get("baseline_kind") == "control" else "the answer you rejected"
         verdict = ("the winner beats it" if fin["better"] == "champion"
-                   else "the answer you rejected scored higher. Say so")
-        print("vs the answer you rejected: winner %s, rejected %s, %s. %s"
-              % (_fmt(fin["champion_total"]), _fmt(fin["baseline_total"]), verdict, fin["reason"]))
+                   else "%s scored higher. Say so" % label)
+        print("vs %s: winner %s, baseline %s, %s. %s"
+              % (label, _fmt(fin["champion_total"]), _fmt(fin["baseline_total"]), verdict, fin["reason"]))
     return 0
 
 
@@ -1179,8 +1210,13 @@ def build_parser():
     s.add_argument("--task-file", help="the task, word for word, as every competitor will get it")
     s.add_argument("--task", help="the task as a string, instead of --task-file")
     s.add_argument("--baseline-file", help="the answer the user was not satisfied with")
+    s.add_argument("--control-file", help="a single-pass control answer; competitors never see it")
     s.add_argument("--wave", type=int, default=DEFAULT_WAVE, help="parallel sub-agents per wave (default 10)")
     s.set_defaults(func=cmd_init)
+
+    s = sub.add_parser("control", parents=[common], help="attach a single-pass control answer to this run")
+    s.add_argument("--file", required=True)
+    s.set_defaults(func=cmd_control)
 
     s = sub.add_parser("next", parents=[common], help="what to do now")
     s.set_defaults(func=cmd_next)

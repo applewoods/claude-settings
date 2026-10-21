@@ -48,6 +48,10 @@ Use the whole scale. A 7 is not a polite default.
 
 A missing attack file means the opponent raised nothing. Score robustness on the flaws you found yourself.
 
+Only VALID attacks count (local change). An INVALID attack that was correctly rebutted costs nothing. An
+INVALID attack that was conceded, where the change made the solution worse, counts like a broken fix (4 or
+below). A correct rebuttal earns the same as a correct fix.
+
 **Clarity**
 - 10: the shape makes it obvious how to use it. No padding.
 - 7: fine, with some padding or one confusing section.

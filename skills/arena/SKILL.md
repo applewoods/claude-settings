@@ -101,13 +101,28 @@ For research planning (problem setting, RQ, plans), also put these in the task f
 If there is an earlier answer the user was not satisfied with, write it word for word to
 `.arena/baseline.md`.
 
+**No earlier answer means: make a control (local change).** Otherwise nobody can tell whether the run beat
+a plain single answer. Before init, run one sub-agent:
+
+- `subagent_type`: `general-purpose`, `model`: `opus` (the plain answer the user would get by asking once)
+- `description`: `arena control`
+- `prompt`: `Read <absolute path of .arena/task.md>. It is a request from a user. Write your best answer for that user to <absolute path of .arena/control.md>. Do not create, edit or delete any other file. When it is written, reply DONE.`
+
+Then pass `--control-file .arena/control.md` to init instead of `--baseline-file`. Competitors never see a
+control, and the final check compares the champion with it blind. For a run that is already finished, attach
+one with `ARENA control --file .arena/control.md`, then `ARENA next` runs the final check. Skip the control
+only if the user says so.
+
+Write only what the user said into the task file. Do not turn the wording of an option you offered the
+user into a hard requirement unless they confirmed that wording.
+
 ## Step 3: init
 
 ```bash
 ARENA init --agents N --seed S --task-file .arena/task.md --baseline-file .arena/baseline.md
 ```
 
-Leave out `--baseline-file` when there is nothing to beat, and `--seed` to get a random one. `init`
+Use `--control-file .arena/control.md` instead when the baseline is a control. Leave both out only when the user declined a control, and `--seed` to get a random one. `init`
 copies the task into the run folder, deals every competitor a different strategy card with no
 repeats, pairs round 1, and writes `arena.json`.
 
@@ -140,8 +155,8 @@ The order `next` takes you through:
 - **spawn**, once: every competitor writes its own solution to the task.
 - then every round: **attack** (two per match) → **defend** (two per match) → **judge** (one per
   match) → `ARENA collect` → `ARENA advance`.
-- **final**, once, only when there is a baseline: a judge compares the champion with the answer the
-  user rejected, blind to which is which. Then `ARENA collect`.
+- **final**, once, when there is a baseline or a control: a judge compares the champion with it,
+  blind to which is which. Then `ARENA collect`.
 - `next` prints DONE: go to step 5.
 
 After each `advance`, give the user one line, such as "Round 2 done: 4 of 16 left." Nothing more.
@@ -161,9 +176,13 @@ solution file you read in the whole run. Give the user:
 2. **Why it won**: the attacks it survived, from `winner`, as a short list. Its card on one line
    (reasoning mode + workflow + strategy).
 3. **Rounds**: for example "7 rounds, 100 agents in, 1 left."
-4. **Against the answer you rejected**, if there was one: the final check's scores, honestly. If the
-   old answer scored higher, say so plainly and show both.
-5. Where the full record lives: the run folder.
+4. **Against the baseline or control**: the final check's scores, honestly. If the baseline or
+   control scored higher, say so plainly and show both. A run that loses to its control was not worth
+   its calls.
+5. **Health of the run**: how many attacks were ruled INVALID, and how many attacks were conceded vs
+   rebutted (from the defense files). If every attack file hit 7, or nearly every attack was conceded,
+   say that the tournament ran as a review loop rather than a contest.
+6. Where the full record lives: the run folder.
 
 If the solution changes files in the user's project, do not apply it. Ask: apply it, or change it?
 
@@ -251,7 +270,7 @@ Rules:
 - Every attack must be specific and checkable: point at the exact part, say what is wrong and why.
 - No praise, no summary, and no style nitpicks unless they stop the user from using it.
 - Do not invent requirements the task does not state. Do not attack the approach, only what it gets wrong.
-- At most 7 attacks, strongest first. If you only find 2 real ones, write 2.
+- Write only real flaws: 0 to 7 attacks, strongest first. There is no quota, and 7 is a ceiling, not a target. The judge rules every attack VALID or INVALID, and weak, speculative or padded attacks count against you. If you find no real flaw, write the single line NO REAL FLAWS FOUND.
 - Label each FATAL (wrong or unusable for the task), MAJOR (a real gap) or MINOR.
 - Do not create, edit or delete any file except the one below.
 
@@ -285,10 +304,10 @@ Your current solution: {{own_solution}}
 The attacks against it: {{attacks}}
 
 Do this:
-1. Take every attack in turn and decide honestly. CONCEDE if it is right, and fix it. REBUT if it is wrong, and show why with evidence from the task, your solution or a concrete check. A rebuttal that only insists you are right counts as a concession. Conceding a real flaw and fixing it scores better than defending it.
+1. Take every attack in turn and decide honestly. CONCEDE if it is right, and fix it. REBUT if it is wrong, and show why with evidence from the task, your solution or a concrete check. A correct rebuttal scores exactly as well as a correct fix. Conceding an attack that is wrong, and changing your solution to suit it, makes the solution worse and is penalised. A rebuttal that only insists you are right, with no evidence, does not count.
 2. Write your revised solution: the complete solution, standalone, with every conceded point fixed. The judge reads only this file, so never write "see the previous version". Say nothing about the arena or your card.
 3. Fix what was attacked and anything the attacks made you notice. Do not start again from scratch and do not copy your opponent. Never invent papers, datasets or numbers while fixing. Mark anything you have not checked `[확인 필요]`.
-4. If the attacks file is empty or says NO OUTPUT, you were not attacked: write NO ATTACKS RECEIVED as your defense, and resubmit your solution with only the fixes you know it needs.
+4. If the attacks file is empty, says NO OUTPUT or says NO REAL FLAWS FOUND, you were not attacked: write NO ATTACKS RECEIVED as your defense, and resubmit your solution with only the fixes you know it needs.
 5. Do not create, edit or delete anything outside {{arena_dir}}.
 
 Write your point-by-point defense to {{defense_out}} in this format:
@@ -326,7 +345,7 @@ Solution {{second}}
 
 How to judge:
 1. Read both revised solutions in full before you score either one.
-2. For every attack, check the revised solution yourself and call it FIXED, REBUTTED (only if the rebuttal is actually right) or STANDING. A defense that says "fixed" is not proof. Look.
+2. Rule on every attack before you score. First: is it VALID (a real flaw against the stated task) or INVALID (wrong, speculative, a style preference, or a requirement the task never states)? Then, for a VALID attack: FIXED, REBUTTED (only if the rebuttal is actually right) or STANDING. A defense that says "fixed" is not proof. Look. For an INVALID attack: a correct rebuttal costs nothing; if the defender conceded it and changed the solution, check whether the change made it worse, and if so, count that against robustness and the criterion it hurt.
 3. Look for flaws the attackers missed, too. A citation, dataset or number stated as fact without a `[확인 필요]` marker, which you have reason to think is invented, counts against correctness. If it is central to the plan, it is fatal. An honest `[확인 필요]` marker is not a flaw.
 4. Score each criterion from 0 to 10 using the rubric's anchors. Set fatal to true only for a flaw you have verified that makes the solution wrong or unusable for the task.
 5. The winner is the higher weighted total (the weights are in the rubric). A fatal solution cannot beat one that is not fatal. On an exact tie, fewer standing attacks wins, then higher correctness.
@@ -343,7 +362,8 @@ Write this JSON, and nothing else, to {{out}}:
   "winner": "{{first}} or {{second}}",
   "reason": "one sentence: the decisive difference",
   "survived": ["each attack the winner took and beat, in a few words"],
-  "standing": {"{{first}}": ["attacks still standing"], "{{second}}": ["attacks still standing"]}
+  "standing": {"{{first}}": ["attacks still standing"], "{{second}}": ["attacks still standing"]},
+  "invalid": {"{{first}}": ["attacks it received that you ruled INVALID"], "{{second}}": ["attacks it received that you ruled INVALID"]}
 }
 
 When the file is written, reply with this one line and nothing else:
@@ -355,7 +375,7 @@ WINNER <winner id> <winner total>-<loser total>
 
 <!-- template:final -->
 ```text
-You are the final check in an arena. {{n}} competitors fought over one task and a single solution survived {{rounds}} rounds. Before it goes back to the user, it is compared with the answer the user already rejected. You are not told which of the two is which. Score what is in front of you. Either one can win.
+You are the final check in an arena. {{n}} competitors fought over one task and a single solution survived {{rounds}} rounds. Before it goes back to the user, it is compared with one other answer to the same task: either an answer the user already got, or an answer written in a single pass. You are not told which of the two is which, or which kind the other one is. Score what is in front of you. Either one can win.
 
 === THE TASK ===
 {{task}}
